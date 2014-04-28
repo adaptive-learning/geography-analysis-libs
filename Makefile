@@ -22,5 +22,6 @@ uninstall:
 
 check:
 	pep8 --exclude=migrations --ignore=E501,E225,E123,E128 proso
+	pep8 --exclude=migrations --ignore=E501,E225,E123,E128 scripts
 	pyflakes proso
 
