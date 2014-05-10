@@ -1,7 +1,8 @@
 import numpy as np
+import pandas as pd
 
 
-def session_number(answers, delta_in_seconds=1800):
+def session_number(answers, delta_in_seconds=1800, override=False):
     '''
     Assign session number to every answer.
 
@@ -10,7 +11,14 @@ def session_number(answers, delta_in_seconds=1800):
             data frame containing answer data
         time_delta (numpy.timedelta64, optional):
             maximal time gap between 2 answers to be marked in the same session
+        override (bool, optional, default False):
+            if False and the data contains 'session_number' column already, the
+            decoration will be skipped.
+    Returns:
+        pandas.DataFrame: data frame containing answer data
     '''
+    if not override and 'session_number' in answers:
+        return answers
     return (answers.
         sort(['user', 'id']).
         groupby('user').
