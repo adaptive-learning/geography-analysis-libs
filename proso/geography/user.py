@@ -1,3 +1,63 @@
+from difficulty import DefaultAnswerStream, PreserveDifficultyEnvironment
+from proso.geography.answers import first_answers
+from proso.geography.dfutil import iterdicts
+from proso.geography.model import predict_simple
+import pandas
+
+
+def prior_skill(answers, difficulty):
+    '''
+    Assuming the given difficulty of places compute the prior skill for users.
+
+    Args:
+        answers (pandas.DataFrame):
+            data frame containing answer data
+        difficulty (dict):
+            place -> difficulty
+    Returns:
+        dict: user's id -> prior skill
+    '''
+    first = first_answers(answers, ['user']).sort('id')
+    env = PreserveDifficultyEnvironment(difficulty)
+    stream = DefaultAnswerStream(env)
+    for a in iterdicts(first):
+        stream.stream_answer(a)
+    skill_items = env.export_prior_skill().items()
+    ids, skills = zip(*skill_items)
+    return dict(zip(list(ids), map(lambda x: predict_simple(x, 0)[0], list(skills))))
+
+
+def prior_skill_to_csv(prior_skill, filename):
+    '''
+    Save the given prior skill dictionary to the CSV file.
+
+    Args:
+        prior_skill (dict):
+            user's id -> prior skill
+        filename (str):
+            name of the file where the data is going to be stored
+    '''
+    pandas.DataFrame(prior_skill.items()).rename(
+        columns={0: 'user', 1: 'prior_skill'}
+    ).to_csv(filename, index=False)
+
+
+def csv_to_prior_skill(filename):
+    '''
+    Load the prior skill dictionary from the given CSV file.
+
+    Args:
+        filename (str):
+            name of the file with the data
+    Returns:
+        dict: user's id-> prior skill
+    '''
+    return (pandas.
+        read_csv(filename).
+        set_index('user')['prior_skill'].
+        to_dict())
+
+
 def answers_per_user(answers):
     '''
     Number of answers per user.
@@ -6,49 +66,11 @@ def answers_per_user(answers):
         answers (pandas.DataFrame):
             data frame containing answer data
     Return:
-        dict: user id -> number of answers
+        dict: user's id -> number of answers
     '''
     return (answers.
         groupby('user').
         apply(len).
         reset_index().
         sort(0, ascending=False)[0].
-        to_dict())
-
-
-def users_per_day(answers):
-    '''
-    Number of user having answers in the given day.
-
-    Args:
-        answers (pandas.DataFrame):
-            data frame containing answer data
-
-    Return:
-        dict: datetime.date -> number of users
-    '''
-    return (answers.
-        groupby(lambda x: answers.inserted[x].date()).
-        apply(lambda x: x.user.nunique()).
-        to_dict())
-
-
-def answers_per_day(answers):
-    '''
-    Number of answers per day.
-
-    Args:
-        answers (pandas.DataFrame):
-            data frame containing answer data
-
-    Return:
-        dict: datetime.date -> number of answers
-    '''
-    return (answers.
-        groupby(['user', lambda x: answers.inserted[x].date()]).
-        apply(len).
-        reset_index().
-        rename(columns={0: 'answers_count', 'level_1': 'inserted_date'}).
-        groupby('inserted_date').
-        apply(lambda x: x.answers_count.mean()).
         to_dict())
