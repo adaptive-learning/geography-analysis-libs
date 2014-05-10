@@ -1,4 +1,29 @@
 import decorator
+import user
+import numpy as np
+import proso.geography.answers
+
+
+def session_user_portion(answers):
+    '''
+    For each session number compute how many users have answer with it.
+
+    Args:
+        answers (pandas.DataFrame):
+            data frame containing answer data, if it is not decorated by 'session_number',
+            it will be decorated
+    Return:
+        dict: session number -> number from (0,1)
+    '''
+    if 'session_number' in answers:
+        data = answers
+    else:
+        data = decorator.session_number(answers)
+    all_users = float(data['user'].nunique())
+    return (data.
+        groupby('session_number').
+        apply(lambda x: x['user'].nunique() / all_users).
+        to_dict())
 
 
 def session_length(answers):
