@@ -34,6 +34,12 @@ def get_parser():
         dest='new_users_only',
         help='drop users having some answers without ab_value')
     parser.add_argument(
+        '--drop-classrooms',
+        type=bool,
+        default=True,
+        dest='drop_classrooms',
+        help='drop users having some of the first answer from classroom')
+    parser.add_argument(
         '-o'
         '--output',
         metavar='EXT',
@@ -96,6 +102,19 @@ def main():
         data_ab_testing = data_ab_testing[
             ~data_ab_testing['user'].isin(data_before_csrf_hotfix['user'].unique())
         ]
+    if args.drop_classrooms:
+        classroom_users = [
+            user
+            for ip, users in (
+                data.sort('id').drop_duplicates('user').
+                groupby('ip_address').
+                apply(lambda x: x['user'].unique()).
+                to_dict().
+                items())
+            for user in users
+            if len(users) > 5
+        ]
+        data_ab_testing = data_ab_testing[~data_ab_testing['user'].isin(classroom_users)]
     for ab_value, group_data in list(data_ab_testing.groupby('ab_value')):
         fig = plt.figure()
         graph.plot_session_length(fig, group_data)
