@@ -48,7 +48,7 @@ def prepare_difficulty(answers):
     Returns:
         dict: place -> difficulty
     '''
-    first = first_answers(answers, ['user']).sort('id')
+    first = first_answers(answers, ['user']).sort('id').sort('id')
     env = InMemoryEnvironment()
     stream = DefaultAnswerStream(env)
     for a in iterdicts(first):
