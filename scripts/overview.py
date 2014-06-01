@@ -103,10 +103,10 @@ def main():
         fig.savefig(args.destination + '/session_length.' + args.output)
         fig = plt.figure()
         graph.plot_session_success(fig, data)
-        fig.savefig(args.destination + '/session_success.' + args.outputi)
+        fig.savefig(args.destination + '/session_success.' + args.output)
     if not args.group or args.group == 'recommendation':
         fig = plt.figure()
-        graph.plot_stay_on_success(fig, data, prior_skill)
+        graph.plot_stay_on_rolling_success(fig, data, prior_skill)
         fig.savefig(args.destination + '/stay_on_success.' + args.output)
     if not args.group or args.group == 'knowledge':
         fig = plt.figure()
