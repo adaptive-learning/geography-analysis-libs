@@ -104,16 +104,21 @@ def plot_stay_on_rolling_success(figure, answers, prior_skill):
     stay_low = sorted(success.stay_on_rolling_success(answers_low).items())
     stay_medium = sorted(success.stay_on_rolling_success(answers_medium).items())
     stay_high = sorted(success.stay_on_rolling_success(answers_high).items())
-    ax = figure.add_subplot(111)
-    ax.plot(zip(*stay_all)[0], zip(*stay_all)[1], label='all users')
-    ax.plot(zip(*stay_low)[0], zip(*stay_low)[1], label='low skill')
-    ax.plot(zip(*stay_medium)[0], zip(*stay_medium)[1], label='medium skill')
-    ax.plot(zip(*stay_high)[0], zip(*stay_high)[1], label='high skill')
-    ax.set_xlabel('rolling success rate (last 10 answers)')
-    ax.set_ylabel('probability of staying')
-    ax.set_ylim(0.8, 1.0)
-    handles, labels = ax.get_legend_handles_labels()
-    ax.legend(handles, labels, loc="lower left")
+    to_plot = {
+        'All Users': stay_all,
+        'Users with Low Skill': stay_low,
+        'Users with Medium Skill': stay_medium,
+        'Users with High Skill': stay_high
+    }
+    i = 1
+    for title, data in to_plot.items():
+        ax = figure.add_subplot(2, 2, i)
+        _plot_errorbar(ax, data)
+        ax.set_title(title)
+        ax.set_xlabel('rolling success rate (last 10 answers)')
+        ax.set_ylabel('probability of staying')
+        i += 1
+    figure.tight_layout()
 
 
 def plot_session_length(figure, answers):
@@ -202,3 +207,18 @@ def plot_success_per_week(figure, answers):
     ax.set_xlabel('week from project start')
     ax.set_ylabel('success rate')
     ax.legend()
+
+
+def _plot_errorbar(plt, data, **argw):
+    """
+        Args:
+            plt (matplotlib.axes.Axes):
+                handler for matplotlib
+            data (dict):
+                xs -> (mean, standar deviation)
+    """
+    plt.errorbar(
+        zip(*data)[0],
+        zip(*(zip(*data)[1]))[0],
+        yerr=zip(*(zip(*data)[1]))[1],
+        **argw)
