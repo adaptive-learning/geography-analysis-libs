@@ -37,7 +37,7 @@ def stay_on_rolling_success(answers, window_length=10):
             number of answers in window
 
     Return:
-        dict: success rate -> probability the user stays in the system
+        dict: success rate -> (probability the user stays in the system, standard deviation)
     '''
     if 'rolling_success' in answers:
         data = answers
@@ -50,5 +50,5 @@ def stay_on_rolling_success(answers, window_length=10):
         reset_index().
         rename(columns={0: 'stay'}).
         groupby('rolling_success').
-        apply(lambda x: x['stay'].mean()).
+        apply(lambda x: (x['stay'].mean(), x['stay'].std())).
         to_dict())

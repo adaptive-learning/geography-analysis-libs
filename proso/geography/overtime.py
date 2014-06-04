@@ -18,40 +18,41 @@ def success_by_user_per_week(answers):
         to_dict())
 
 
-def users_per_day(answers):
+def users_per_week(answers):
     '''
-    Number of user having answers in the given day.
+    Number of user having answers in the given week.
 
     Args:
         answers (pandas.DataFrame):
             data frame containing answer data
 
     Return:
-        dict: datetime.date -> number of users
+        dict: (year, week) -> number of users
     '''
     return (answers.
         set_index('inserted').
-        groupby(lambda x: x.date()).
+        groupby([lambda x: x.year, lambda x: x.week]).
         apply(lambda x: x.user.nunique()).
         to_dict())
 
 
-def answers_per_day(answers):
+def answers_per_week(answers):
     '''
-    Number of answers per day.
+    Number of answers per week.
 
     Args:
         answers (pandas.DataFrame):
             data frame containing answer data
 
     Return:
-        dict: datetime.date -> number of answers
+        dict: (year, week) -> number of answers
     '''
     return (answers.
-        groupby(['user', lambda x: answers.inserted[x].date()]).
+        set_index('inserted').
+        groupby(['user', lambda x: x.year, lambda x: x.week]).
         apply(len).
         reset_index().
-        rename(columns={0: 'answers_count', 'level_1': 'inserted_date'}).
-        groupby('inserted_date').
+        rename(columns={0: 'answers_count', 'level_1': 'year', 'level_2': 'week'}).
+        groupby(['year', 'week']).
         apply(lambda x: x.answers_count.mean()).
         to_dict())

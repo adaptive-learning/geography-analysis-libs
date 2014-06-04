@@ -15,9 +15,9 @@ def main():
         prior_skill = analysis.load_prior_skill(args, data, difficulty)
     if analysis.is_group(args, 'time'):
         fig = plt.figure()
-        graph.plot_answers_per_day(fig, data)
+        graph.plot_answers_per_week(fig, data)
         fig.suptitle('Average number of answers per user')
-        fig.savefig(args.destination + '/answers_per_day.' + args.output)
+        fig.savefig(args.destination + '/answers_per_week.' + args.output)
         fig = plt.figure()
         graph.plot_success_per_week(fig, data)
         fig.savefig(args.destination + '/success_per_week.' + args.output)

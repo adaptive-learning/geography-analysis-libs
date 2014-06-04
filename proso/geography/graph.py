@@ -72,19 +72,21 @@ def boxplot_prior_skill_diff(figure, answers, difficulty, group_column, session_
     ax.set_ylabel('relative difference between prior skills')
 
 
-def plot_answers_per_day(figure, answers):
+def plot_answers_per_week(figure, answers):
     ax1 = figure.add_subplot(111)
-    to_plot = sorted(overtime.answers_per_day(answers).items())
-    ax1.plot(zip(*to_plot)[0], zip(*to_plot)[1], 'b-')
-    ax1.set_xlabel('day')
+    to_plot = sorted(overtime.answers_per_week(answers).items())
+    xs = range(len(to_plot))
+    ax1.plot(xs, zip(*to_plot)[1], 'b-o')
+    ax1.set_xlabel('week from project start')
     ax1.set_ylabel('average number of answers per user', color='b')
     for tl in ax1.get_yticklabels():
         tl.set_color('b')
 
-    to_plot = sorted(overtime.users_per_day(answers).items())
+    to_plot = sorted(overtime.users_per_week(answers).items())
+    xs = range(len(to_plot))
     ax2 = ax1.twinx()
     ax2.set_ylabel('number of users', color='r')
-    ax2.plot(zip(*to_plot)[0], zip(*to_plot)[1], 'r--', linewidth=1)
+    ax2.plot(xs, zip(*to_plot)[1], 'r-v', linewidth=1)
     for tl in ax2.get_yticklabels():
         tl.set_color('r')
 
