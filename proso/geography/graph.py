@@ -52,6 +52,29 @@ def hist_answers_per_user(figure, answers, group_column, group_name_mapping=None
     figure.tight_layout()
 
 
+def hist_rolling_success(figure, answers, prior_skill):
+    limits = numpy.percentile(prior_skill.values(), [25, 75])
+    answers_low = answers[
+        answers['user'].apply(lambda user: prior_skill[user] < limits[0])]
+    answers_medium = answers[
+        answers['user'].apply(
+            lambda user: prior_skill[user] >= limits[0] and prior_skill[user] < limits[1])]
+    answers_high = answers[
+        answers['user'].apply(lambda user: prior_skill[user] >= limits[1])]
+    ax = figure.add_subplot(111)
+    ax.hist(
+        [
+            zip(*success.rolling_success_per_user(answers_low).values())[0],
+            zip(*success.rolling_success_per_user(answers_medium).values())[0],
+            zip(*success.rolling_success_per_user(answers_high).values())[0]
+        ],
+        label=['Users with Low Skill', 'Users with Medium Skill', 'Users with High Skill'],
+        bins=10,
+        normed=True)
+    ax.legend()
+    figure.tight_layout()
+
+
 def boxplot_success_diff(figure, answers, group_column, session_number_first, session_number_second):
     ax = figure.add_subplot(111)
     labels = []

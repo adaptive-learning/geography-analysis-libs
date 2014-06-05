@@ -31,8 +31,8 @@ def main():
         fig.savefig(args.destination + '/session_success.' + args.output)
     if analysis.is_group(args, 'recommendation'):
         fig = plt.figure()
-        graph.plot_stay_on_rolling_success(fig, data, prior_skill)
-        fig.savefig(args.destination + '/stay_on_success.' + args.output)
+        graph.hist_rolling_success(fig, data, prior_skill)
+        fig.savefig(args.destination + '/rolling_success_hist.' + args.output)
     if analysis.is_group(args, 'knowledge'):
         fig = plt.figure()
         graph.plot_session_prior_skill(fig, data, difficulty)

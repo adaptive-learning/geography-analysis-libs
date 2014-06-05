@@ -1,7 +1,7 @@
 import decorator
 
 
-def rolling_success_hist(answers, window_length=10):
+def rolling_success_per_user(answers, window_length=10):
     '''
     Number of rolling windows with the given success rate.
 
@@ -12,7 +12,7 @@ def rolling_success_hist(answers, window_length=10):
             number of answers in window
 
     Return:
-        dict: success rate -> number of windows
+        dict: user -> (rolling success mean, standard deviation)
     '''
     if 'rolling_success' in answers:
         data = answers
@@ -20,8 +20,8 @@ def rolling_success_hist(answers, window_length=10):
         data = decorator.rolling_success(answers, window_length=window_length)
     return (data.
         dropna().
-        groupby('rolling_success').
-        apply(len).
+        groupby('user').
+        apply(lambda x: (x['rolling_success'].dropna().mean(), x['rolling_success'].dropna().std())).
         to_dict())
 
 
