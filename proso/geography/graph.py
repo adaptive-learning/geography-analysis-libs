@@ -11,9 +11,13 @@ def boxplot_answers_per_user(figure, answers, group_column, group_name_mapping=N
     ax = figure.add_subplot(111)
     labels = []
     to_plot = []
+    means = []
+    stds = []
     for group_name, group_data in answers.groupby(group_column):
         number = user.answers_per_user(group_data)
         to_plot.append(number.values())
+        means.append(numpy.mean(number.values()))
+        stds.append(numpy.std(number.values()))
         labels.append(
             str(group_name_mapping[group_name] if group_name_mapping else group_name) + '\n(' + str(len(number)) + ')')
     if len(to_plot) == 2:
@@ -24,6 +28,9 @@ def boxplot_answers_per_user(figure, answers, group_column, group_name_mapping=N
             'p-value: ' + str(pvalue),
             horizontalalignment='center', verticalalignment='baseline')
     ax.boxplot(to_plot)
+    ax.errorbar(range(1, len(to_plot) + 1), means, yerr=stds, fmt='o')
+    for i, m in zip(range(len(means)), means):
+        ax.annotate(int(numpy.round(m)), (i + 1, m))
     ax.set_yscale('log')
     ax.set_xticklabels(labels)
     for label in ax.get_xticklabels():
@@ -71,7 +78,7 @@ def hist_rolling_success(figure, answers, prior_skill):
         label=['Users with Low Skill', 'Users with Medium Skill', 'Users with High Skill'],
         bins=10,
         normed=True)
-    ax.legend()
+    ax.legend(loc='upper left')
     figure.tight_layout()
 
 
