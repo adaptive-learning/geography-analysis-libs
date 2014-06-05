@@ -38,17 +38,18 @@ def hist_answers_per_user(figure, answers, group_column, group_name_mapping=None
     to_plots = []
     group_names = []
     for group_name, group_data in answers.groupby(group_column):
-        to_plots.append(user.answers_per_user(group_data).values())
+        to_plots.append(numpy.log10(user.answers_per_user(group_data).values()))
         group_names.append(group_name)
-    xmax = numpy.percentile(reduce(lambda x, y: x + y, to_plots, []), 95)
-    xs = numpy.linspace(0, xmax, 100)
-    for group_name, to_plot in zip(group_names, to_plots):
-        density = scipy.stats.gaussian_kde(to_plot)
-        ax.plot(
-            xs,
-            density(xs),
-            label=str(group_name_mapping[group_name] if group_name_mapping else group_name) + ' (' + str(len(to_plot)) + ')')
+    ax.hist(
+        to_plots,
+        label=[str(group_name_mapping[group_name] if group_name_mapping else group_name) + ' (' + str(len(to_plot)) + ')' for group_name, to_plot in zip(group_names, to_plots)],
+        normed=True,
+        )
     ax.legend()
+    ax.set_ylim(0, 1)
+    ax.set_xlabel("Number of Answers (log)")
+    ax.set_ylabel("Number of Users (normed)")
+    figure.tight_layout()
 
 
 def boxplot_success_diff(figure, answers, group_column, session_number_first, session_number_second):
