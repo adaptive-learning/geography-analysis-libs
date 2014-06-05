@@ -7,14 +7,15 @@ import numpy
 import scipy.stats
 
 
-def boxplot_answers_per_user(figure, answers, group_column):
+def boxplot_answers_per_user(figure, answers, group_column, group_name_mapping=None):
     ax = figure.add_subplot(111)
     labels = []
     to_plot = []
     for group_name, group_data in answers.groupby(group_column):
         number = user.answers_per_user(group_data)
         to_plot.append(number.values())
-        labels.append(group_name + '\n(' + str(len(number)) + ')')
+        labels.append(
+            str(group_name_mapping[group_name] if group_name_mapping else group_name) + '\n(' + str(len(number)) + ')')
     if len(to_plot) == 2:
         tstat, pvalue = scipy.stats.ttest_ind(numpy.log(to_plot[0]), numpy.log(to_plot[1]))
         pvalue = str(int(100 * pvalue if pvalue else 0) / 100.0)
@@ -25,8 +26,29 @@ def boxplot_answers_per_user(figure, answers, group_column):
     ax.boxplot(to_plot)
     ax.set_yscale('log')
     ax.set_xticklabels(labels)
+    for label in ax.get_xticklabels():
+        label.set_rotation(10)
     ax.set_xlabel(group_column)
     ax.set_ylabel('number of answers')
+    figure.tight_layout()
+
+
+def hist_answers_per_user(figure, answers, group_column, group_name_mapping=None):
+    ax = figure.add_subplot(111)
+    to_plots = []
+    group_names = []
+    for group_name, group_data in answers.groupby(group_column):
+        to_plots.append(user.answers_per_user(group_data).values())
+        group_names.append(group_name)
+    xmax = numpy.percentile(reduce(lambda x, y: x + y, to_plots, []), 95)
+    xs = numpy.linspace(0, xmax, 100)
+    for group_name, to_plot in zip(group_names, to_plots):
+        density = scipy.stats.gaussian_kde(to_plot)
+        ax.plot(
+            xs,
+            density(xs),
+            label=str(group_name_mapping[group_name] if group_name_mapping else group_name) + ' (' + str(len(to_plot)) + ')')
+    ax.legend()
 
 
 def boxplot_success_diff(figure, answers, group_column, session_number_first, session_number_second):

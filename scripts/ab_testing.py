@@ -1,150 +1,89 @@
-from argparse import ArgumentParser
-from os import path, makedirs
-import matplotlib.pyplot as plt
-import proso.geography.answers as answer
-import proso.geography.graph as graph
-import proso.geography.difficulty
-import proso.geography.decorator as decorator
 import datetime
+from os import path
+import matplotlib.pyplot as plt
+import proso.geography.graph as graph
+import proso.geography.user as user
+import proso.geography.analysis as analysis
+import proso.geography.answers as answer
+
+CSRF_HOTFIX = datetime.datetime(year=2014, month=4, day=25, hour=23)
 
 
-def get_parser():
-    parser = ArgumentParser()
+def load_parser():
+    parser = analysis.parser_init(required=['--ab-values', '--answer-ab-values'])
+    parser = analysis.parser_group(parser, ['time', 'session', 'recommendation', 'knowledge'])
     parser.add_argument(
-        '-a',
-        '--answers',
-        metavar='FILE',
+        '--interested-prefixes',
+        nargs='+',
+        dest='interested_prefixes',
+        type=str,
         required=True,
-        help='path to the CSV with answers')
-    parser.add_argument(
-        '--options',
-        metavar='FILE',
-        help='path to the CSV with answer options')
-    parser.add_argument(
-        '-d',
-        '--destination',
-        metavar='DIR',
-        required=True,
-        help='path to the directory where the created data will be saved')
-    parser.add_argument(
-        '-new',
-        '--new-users-only',
-        type=bool,
-        default=True,
-        dest='new_users_only',
-        help='drop users having some answers without ab_value')
-    parser.add_argument(
-        '--drop-classrooms',
-        type=bool,
-        default=True,
-        dest='drop_classrooms',
-        help='drop users having some of the first answer from classroom')
-    parser.add_argument(
-        '-o'
-        '--output',
-        metavar='EXT',
-        dest='output',
-        default='svg',
-        help='extension for the output fles')
-    parser.add_argument(
-        '--decorator',
-        default=True,
-        metavar='BOOL',
-        help='enables decorator optimization')
+        help='prefixes of A/B values which are used for analysis')
     return parser
 
 
-def decorator_options(args, answers):
-    if 'options' in answers:
-        return answers
-    if not args.options:
-        raise Exception('you have to define CSV with answer options')
-    return answer.options_from_csv(
-        answers=answers,
-        answer_options_csv=args.options)
+def load_answers_to_ab_testing(args):
+    filename = args.destination + '/geography.answer.ab_testing_' + '__'.join(args.interested_prefixes) + '.csv'
+    if path.exists(filename):
+        return answer.from_csv(filename)
+    else:
+        data_all = analysis.load_answers(args)
+        data = data_all[data_all['inserted'] > CSRF_HOTFIX]
+        data['interested_ab_values'] = (data['ab_values'].
+            apply(lambda values: '__'.join(sorted([v for v in values if any([v.startswith(p) for p in args.interested_prefixes])]))))
+        data = data[data['ab_values'].apply(lambda values: len([v for v in values if any([v.startswith(p) for p in args.interested_prefixes])]) == len(args.interested_prefixes))]
+        first_answer_id = data['id'].min()
+        users_before = (data_all[data_all['id'] < first_answer_id])['user'].unique()
+        data = data[~data['user'].isin(users_before)]
+        data.to_csv(filename, index=False)
+        return data
 
 
-def decorator_optimization(args, answers):
-    decorated = decorator.rolling_success(
-        decorator.last_in_session(
-            decorator.session_number(answers)))
-    decorated.to_csv(args.answers, index=False)
-    return decorated
+def decorete_ab_group(args, data):
+    uniques = data['interested_ab_values'].unique()
+    mapping = dict(zip(
+        range(len(uniques)),
+        map(lambda x: drop_prefixes(x, args.interested_prefixes), uniques)))
+    mapping_reverse = dict(zip(
+        uniques,
+        range(len(uniques))))
+    data['ab_group'] = data['interested_ab_values'].apply(lambda x: mapping_reverse[x])
+    return data, mapping
+
+
+def drop_prefixes(name, prefixes):
+    for prefix in prefixes:
+        name = name.replace(prefix, "")
+    return name
 
 
 def main():
-    csrf_hotfix = datetime.datetime(year=2014, month=4, day=25, hour=23)
-    args = get_parser().parse_args()
-    if not path.exists(args.destination):
-        makedirs(args.destination)
-    data = answer.from_csv(args.answers)
-    data = decorator_options(args, data)
-    if args.decorator:
-        data = decorator_optimization(args, data)
+    parser = load_parser()
+    args = parser.parse_args()
+    data = load_answers_to_ab_testing(args)
+    data, mapping = decorete_ab_group(args, data)
 
-    if not path.exists(args.destination + '/difficulty.csv'):
-        difficulty = proso.geography.difficulty.prepare_difficulty(data)
-        proso.geography.difficulty.difficulty_to_csv(
-            difficulty, args.destination + '/difficulty.csv')
-    else:
-        difficulty = proso.geography.difficulty.csv_to_difficulty(
-            args.destination + '/difficulty.csv')
-
-    data_ab_testing = data.dropna(subset=['ab_value'])
-    data_ab_testing = data_ab_testing[data_ab_testing['inserted'] > csrf_hotfix]
-    data_ab_testing.to_csv(args.destination + '/geography.answer.ab_testing.csv')
-    if args.new_users_only:
-        data_before_ab_testing = data[data['ab_value'].isnull()]
-        data_before_csrf_hotfix = data[data['inserted'] <= csrf_hotfix]
-        data_ab_testing = data_ab_testing[
-            ~data_ab_testing['user'].isin(data_before_ab_testing['user'].unique())
-        ]
-        data_ab_testing = data_ab_testing[
-            ~data_ab_testing['user'].isin(data_before_csrf_hotfix['user'].unique())
-        ]
-    if args.drop_classrooms:
-        classroom_users = [
-            user
-            for ip, users in (
-                data.sort('id').drop_duplicates('user').
-                groupby('ip_address').
-                apply(lambda x: x['user'].unique()).
-                to_dict().
-                items())
-            for user in users
-            if len(users) > 5
-        ]
-        data_ab_testing = data_ab_testing[~data_ab_testing['user'].isin(classroom_users)]
-    for ab_value, group_data in list(data_ab_testing.groupby('ab_value')):
-        fig = plt.figure()
-        graph.plot_session_length(fig, group_data)
-        fig.suptitle('AB testing: ' + ab_value)
-        fig.savefig(args.destination + 'session_length_' + ab_value + '.' + args.output)
-        fig = plt.figure()
-        graph.plot_session_success(fig, group_data)
-        fig.suptitle('AB testing: ' + ab_value)
-        fig.savefig(args.destination + 'session_success_' + ab_value + '.' + args.output)
-        fig = plt.figure()
-        graph.plot_session_prior_skill(fig, group_data, difficulty)
-        fig.suptitle('AB testing: ' + ab_value)
-        fig.savefig(args.destination + 'session_prior_skill_' + ab_value + '.' + args.output)
     fig = plt.figure()
-    graph.boxplot_prior_skill_diff(fig, data_ab_testing, difficulty, 'ab_value', 0, 1)
-    fig.suptitle('AB testing: difference between prior skills for the first and for the second session')
-    fig.savefig(args.destination + 'session_prior_skill_diff_0vs1.' + args.output)
-    fig = plt.figure()
-    graph.boxplot_success_diff(fig, data_ab_testing, 'ab_value', 0, 1)
-    fig.suptitle('AB testing: success difference from the first and the second session')
-    fig.savefig(args.destination + 'session_success_diff_0vs1.' + args.output)
-    fig = plt.figure()
-    graph.boxplot_answers_per_user(fig, data_ab_testing, 'ab_value')
+    graph.boxplot_answers_per_user(fig, data, 'ab_group', mapping)
     fig.suptitle('AB testing: number of answers per user')
-    fig.savefig(args.destination + '/answers_per_user.' + args.output)
+    fig.savefig(args.destination + '/answers_per_user_boxplot.' + args.output)
+
+    fig = plt.figure()
+    graph.hist_answers_per_user(fig, data, 'ab_group', mapping)
+    fig.suptitle('AB testing: number of answers per user')
+    fig.savefig(args.destination + '/answers_per_user_hist.' + args.output)
+
     fig = plt.figure()
     graph.boxplot_answers_per_user(fig,
-        data_ab_testing[data_ab_testing['session_number'] == 0], 'ab_value')
+        data[data['session_number'] == 0], 'ab_group', mapping)
     fig.suptitle('AB testing: number of answers per user (only the first session)')
-    fig.savefig(args.destination + '/answers_per_user_session_0.' + args.output)
+    fig.savefig(args.destination + '/answers_per_user_session_0_boxplot.' + args.output)
+
+    fig = plt.figure()
+    graph.hist_answers_per_user(fig,
+        data[data['session_number'] == 0], 'ab_group', mapping)
+    fig.suptitle('AB testing: number of answers per user (only the first session)')
+    fig.savefig(args.destination + '/answers_per_user_session_0_hist.' + args.output)
 
 
 if __name__ == "__main__":

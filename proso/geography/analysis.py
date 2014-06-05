@@ -5,7 +5,7 @@ import proso.geography.decorator as decorator
 import proso.geography.difficulty
 
 
-def parser_init():
+def parser_init(required=None):
     parser = ArgumentParser()
     parser.add_argument(
         '-a',
@@ -16,16 +16,19 @@ def parser_init():
     parser.add_argument(
         '--options',
         metavar='FILE',
+        required=_is_required(required, '--options'),
         help='path to the CSV with answer options')
     parser.add_argument(
         '--ab-values',
         metavar='FILE',
         dest='ab_values',
+        required=_is_required(required, '--ab-values'),
         help='path to the CSV with ab values')
     parser.add_argument(
         '--answer-ab-values',
         metavar='FILE',
         dest='answer_ab_values',
+        required=_is_required(required, '--answer-ab-values'),
         help='path to the CSV with answer ab values')
     parser.add_argument(
         '-d',
@@ -48,7 +51,7 @@ def parser_init():
     parser.add_argument(
         '--drop-classrooms',
         type=bool,
-        default=True,
+        default=False,
         dest='drop_classrooms',
         help='drop users having some of the first answer from classroom')
     return parser
@@ -95,7 +98,7 @@ def load_answers(args):
             data = data[~data['user'].isin(classroom_users)]
         if args.optimize:
             data = decorator_optimization(data)
-            data.to_csv(args.destination + '/geography.answer.csv')
+            data.to_csv(args.destination + '/geography.answer.csv', index=False)
         return data
 
 
@@ -137,3 +140,7 @@ def is_group(args, group):
 
 def is_any_group(args, groups):
     return not args.group or args.group in groups
+
+
+def _is_required(required, name):
+    return required is not None and name in required
