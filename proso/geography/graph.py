@@ -12,12 +12,14 @@ def boxplot_answers_per_user(figure, answers, group_column, group_name_mapping=N
     labels = []
     to_plot = []
     means = []
+    medians = []
     stds = []
     for group_name, group_data in answers.groupby(group_column):
         number = user.answers_per_user(group_data)
         to_plot.append(number.values())
         means.append(numpy.mean(number.values()))
         stds.append(numpy.std(number.values()))
+        medians.append(numpy.median(number.values()))
         labels.append(
             str(group_name_mapping[group_name] if group_name_mapping else group_name) + '\n(' + str(len(number)) + ')')
     if len(to_plot) == 2:
@@ -30,6 +32,8 @@ def boxplot_answers_per_user(figure, answers, group_column, group_name_mapping=N
     ax.boxplot(to_plot)
     ax.errorbar(range(1, len(to_plot) + 1), means, yerr=stds, fmt='o')
     for i, m in zip(range(len(means)), means):
+        ax.annotate(int(numpy.round(m)), (i + 1, m))
+    for i, m in zip(range(len(medians)), medians):
         ax.annotate(int(numpy.round(m)), (i + 1, m))
     ax.set_yscale('log')
     ax.set_xticklabels(labels)
