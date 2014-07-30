@@ -54,6 +54,11 @@ def parser_init(required=None):
         default=False,
         dest='drop_classrooms',
         help='drop users having some of the first answer from classroom')
+    parser.add_argument(
+        '--answers-per-user',
+        type=int,
+        dest='answers_per_user',
+        help='drop user having less than the given number of answers')
     return parser
 
 
@@ -96,6 +101,15 @@ def load_answers(args):
                 if len(users) > 5
             ]
             data = data[~data['user'].isin(classroom_users)]
+        if args.answers_per_user:
+            valid_users = map(
+                lambda (u, n): u,
+                filter(
+                    lambda (u, n): n >= args.answers_per_user,
+                    data.groupby('user').apply(len).to_dict().items()
+                )
+            )
+            data = data[data['user'].isin(valid_users)]
         if args.optimize:
             data = decorator_optimization(data)
             data.to_csv(args.destination + '/geography.answer.csv', index=False)
