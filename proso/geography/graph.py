@@ -29,6 +29,7 @@ def boxplot_answers_per_user(figure, answers, group_column, group_name_mapping=N
             0.8, 0.8,
             'p-value: ' + str(pvalue),
             horizontalalignment='center', verticalalignment='baseline')
+    labels, to_plot, means, medians, stds = zip(*sorted(zip(labels, to_plot, means, medians, stds)))
     ax.boxplot(to_plot)
     ax.errorbar(range(1, len(to_plot) + 1), means, yerr=stds, fmt='o')
     for i, m in zip(range(len(means)), means):
@@ -51,9 +52,14 @@ def hist_answers_per_user(figure, answers, group_column, group_name_mapping=None
     for group_name, group_data in answers.groupby(group_column):
         to_plots.append(numpy.log10(user.answers_per_user(group_data).values()))
         group_names.append(group_name)
+    if group_name_mapping:
+        group_names = [group_name_mapping[group_name] for group_name in group_names]
+    else:
+        group_names = map(str, group_names)
+    group_names, to_plots = zip(*sorted(zip(group_names, to_plots)))
     ax.hist(
         to_plots,
-        label=[str(group_name_mapping[group_name] if group_name_mapping else group_name) + ' (' + str(len(to_plot)) + ')' for group_name, to_plot in zip(group_names, to_plots)],
+        label=[group_name + ' (' + str(len(to_plot)) + ')' for group_name, to_plot in zip(group_names, to_plots)],
         normed=True,
         )
     ax.legend()
