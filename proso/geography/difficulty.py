@@ -1,6 +1,4 @@
-from proso.geography.prior import elo_prepare, elo_predict, elo_update
-from proso.geography.current import pfa_prepare, pfa_predict, pfa_update
-from proso.geography.model import AnswerStream
+from proso.geography.model import AnswerStream, DefaultModel
 from proso.geography.environment import InMemoryEnvironment
 from proso.geography.answers import first_answers
 from proso.geography.dfutil import iterdicts
@@ -59,28 +57,7 @@ def prepare_difficulty(answers):
 class DefaultAnswerStream(AnswerStream):
 
     def __init__(self, environment):
-        self._environment = environment
-
-    def current_prepare(self, answer, env):
-        return pfa_prepare(answer, env)
-
-    def current_predict(self, answer, data):
-        return pfa_predict(answer, data)
-
-    def current_update(self, answer, env, data, prediction):
-        return pfa_update(answer, env, data, prediction)
-
-    def environment(self):
-        return self._environment
-
-    def prior_prepare(self, answer, env):
-        return elo_prepare(answer, env)
-
-    def prior_predict(self, answer, data):
-        return elo_predict(answer, data)
-
-    def prior_update(self, answer, env, data, prediction):
-        return elo_update(answer, env, data, prediction)
+        AnswerStream.__init__(self, DefaultModel(), environment)
 
 
 class PreserveDifficultyEnvironment(InMemoryEnvironment):
