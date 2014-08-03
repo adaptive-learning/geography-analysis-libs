@@ -45,13 +45,11 @@ def parser_init(required=None):
         help='extension for the output fles')
     parser.add_argument(
         '--optimize',
-        default=True,
-        metavar='BOOL',
+        action='store_true',
         help='enables decorator optimization')
     parser.add_argument(
         '--drop-classrooms',
-        type=bool,
-        default=False,
+        action='store_true',
         dest='drop_classrooms',
         help='drop users having some of the first answer from classroom')
     parser.add_argument(
