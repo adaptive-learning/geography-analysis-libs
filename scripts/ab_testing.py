@@ -29,13 +29,10 @@ def load_answers_to_ab_testing(args):
         return answer.from_csv(filename)
     else:
         data_all = analysis.load_answers(args)
-        data = data_all[data_all['inserted'] > CSRF_HOTFIX]
+        data = answer.apply_filter(data_all, lambda d: d['inserted'] > CSRF_HOTFIX)
         data['interested_ab_values'] = (data['ab_values'].
             apply(lambda values: '__'.join(sorted([v for v in values if any([v.startswith(p) for p in args.interested_prefixes])]))))
-        data = data[data['ab_values'].apply(lambda values: len([v for v in values if any([v.startswith(p) for p in args.interested_prefixes])]) == len(args.interested_prefixes))]
-        first_answer_id = data['id'].min()
-        users_before = (data_all[data_all['id'] < first_answer_id])['user'].unique()
-        data = data[~data['user'].isin(users_before)]
+        data = answer.apply_filter(data, lambda d: len([v for v in d['ab_values'] if any([v.startswith(p) for p in args.interested_prefixes])]) == len(args.interested_prefixes))
         data.to_csv(filename, index=False)
         return data
 
