@@ -5,6 +5,7 @@ import proso.geography.graph as graph
 import proso.geography.user as user
 import proso.geography.analysis as analysis
 import proso.geography.answers as answer
+import proso.geography.decorator as decorator
 
 CSRF_HOTFIX = datetime.datetime(year=2014, month=4, day=25, hour=23)
 
@@ -74,6 +75,7 @@ def main():
     fig.savefig(args.destination + '/answers_per_user_hist.' + args.output)
 
     fig = plt.figure()
+    data = decorator.session_number(data)
     graph.boxplot_answers_per_user(fig,
         data[data['session_number'] == 0], 'ab_group', mapping)
     fig.suptitle('AB testing: number of answers per user (only the first session)')
