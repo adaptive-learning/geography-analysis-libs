@@ -64,25 +64,25 @@ def main():
     fig = plt.figure()
     graph.boxplot_answers_per_user(fig, data, 'ab_group', mapping)
     fig.suptitle('AB testing: number of answers per user')
-    fig.savefig(args.destination + '/answers_per_user_boxplot.' + args.output)
+    analysis.savefig(args, fig, 'answers_per_user_boxplot')
 
     fig = plt.figure()
     graph.hist_answers_per_user(fig, data, 'ab_group', mapping)
     fig.suptitle('AB testing: number of answers per user')
-    fig.savefig(args.destination + '/answers_per_user_hist.' + args.output)
+    analysis.savefig(args, fig, 'answers_per_user_hist')
 
     fig = plt.figure()
     data = decorator.session_number(data)
     graph.boxplot_answers_per_user(fig,
         data[data['session_number'] == 0], 'ab_group', mapping)
     fig.suptitle('AB testing: number of answers per user (only the first session)')
-    fig.savefig(args.destination + '/answers_per_user_session_0_boxplot.' + args.output)
+    analysis.savefig(args, fig, 'answers_per_user_session_0_boxplot')
 
     fig = plt.figure()
     graph.hist_answers_per_user(fig,
         data[data['session_number'] == 0], 'ab_group', mapping)
     fig.suptitle('AB testing: number of answers per user (only the first session)')
-    fig.savefig(args.destination + '/answers_per_user_session_0_hist.' + args.output)
+    analysis.savefig(args, fig, 'answers_per_user_session_0_hist')
 
 
 if __name__ == "__main__":

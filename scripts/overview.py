@@ -17,26 +17,26 @@ def main():
         fig = plt.figure()
         graph.plot_answers_per_week(fig, data)
         fig.suptitle('Average number of answers per user')
-        fig.savefig(args.destination + '/answers_per_week.' + args.output)
+        analysis.savefig(args, fig, 'answers_per_week')
         fig = plt.figure()
         graph.plot_success_per_week(fig, data)
-        fig.savefig(args.destination + '/success_per_week.' + args.output)
+        analysis.savefig(args, fig, 'success_per_week')
     if analysis.is_group(args, 'session'):
         fig = plt.figure()
         graph.plot_session_length(fig, data)
         fig.suptitle('Session length')
-        fig.savefig(args.destination + '/session_length.' + args.output)
+        analysis.savefig(args, fig, 'session_length')
         fig = plt.figure()
         graph.plot_session_success(fig, data)
-        fig.savefig(args.destination + '/session_success.' + args.output)
+        analysis.savefig(args, fig, 'session_success')
     if analysis.is_group(args, 'recommendation'):
         fig = plt.figure()
         graph.hist_rolling_success(fig, data, prior_skill)
-        fig.savefig(args.destination + '/rolling_success_hist.' + args.output)
+        analysis.savefig(args, fig, 'rolling_success_hist')
     if analysis.is_group(args, 'knowledge'):
         fig = plt.figure()
         graph.plot_session_prior_skill(fig, data, difficulty)
-        fig.savefig(args.destination + '/session_prior_skill.' + args.output)
+        analysis.savefig(args, fig, 'session_prior_skill')
 
 
 if __name__ == "__main__":
