@@ -1,6 +1,13 @@
 import decorator
 
 
+def success_per_user(answers):
+    return (answers.
+        groupby('user').
+        apply(lambda x: sum(x['place_asked'] == x['place_answered']) / float(len(x))).
+        to_dict())
+
+
 def rolling_success_per_user(answers, window_length=10):
     '''
     Number of rolling windows with the given success rate.

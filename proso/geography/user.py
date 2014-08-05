@@ -2,7 +2,20 @@ from difficulty import DefaultAnswerStream, PreserveDifficultyEnvironment
 from proso.geography.answers import first_answers
 from proso.geography.dfutil import iterdicts
 from proso.geography.model import predict_simple
+import decorator
 import pandas
+
+
+def user_ratio(answers, session_number=None, answer_number=None):
+    answers = decorator.session_number(answers)
+
+    def user_ratio_filter(data):
+        if session_number is not None and session_number > data['session_number'].max():
+            return False
+        if answer_number is not None:
+            return answer_number <= len(data)
+        return True
+    return sum(answers.groupby('user').apply(user_ratio_filter)) / float(answers['user'].nunique())
 
 
 def prior_skill(answers, difficulty):

@@ -7,6 +7,51 @@ import numpy
 import scipy.stats
 
 
+def plot_user_ratio(figure, answers, group_column, group_name_mapping=None, answer_numbers=None, session_numbers=None):
+    ax = figure.add_subplot(111)
+    group_names = []
+    to_plots = []
+    labels = None
+    for group_name, group_data in answers.groupby(group_column):
+        to_plot = []
+        current_labels = []
+        if answer_numbers is not None:
+            for num in answer_numbers:
+                to_plot.append(user.user_ratio(
+                    group_data,
+                    answer_number=num))
+                current_labels.append(str(num) + ' answers')
+        else:
+            for num in session_numbers:
+                to_plot.append(user.user_ratio(
+                    group_data,
+                    session_number=num))
+                current_labels.append(str(num) + ' sessions')
+        labels = current_labels
+        to_plots.append(to_plot)
+        group_names.append(group_name_mapping[group_name] if group_name_mapping else group_name)
+
+    to_plots = map(list, zip(*to_plots))
+    ax.set_xlabel(group_column)
+    ax.set_ylabel('Ratio of Users')
+    for to_plot, label in zip(to_plots, labels):
+        group_names, to_plot = zip(*sorted(zip(group_names, to_plot)))
+        ax.plot(group_names, to_plot, label=label)
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+
+
+def boxplot_success_per_user(figure, answers, group_column, group_name_mapping=None):
+    ax = figure.add_subplot(111)
+    labels = []
+    to_plot = []
+    for group_name, group_data in answers.groupby(group_column):
+        s = success.success_per_user(group_data).values()
+        to_plot.append(s)
+        labels.append(
+            str(group_name_mapping[group_name] if group_name_mapping else group_name) + '\n(' + str(len(s)) + ')')
+    _boxplot(ax, to_plot, labels)
+
+
 def boxplot_answers_per_user(figure, answers, group_column, group_name_mapping=None):
     ax = figure.add_subplot(111)
     labels = []

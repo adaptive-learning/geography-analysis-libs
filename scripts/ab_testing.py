@@ -84,6 +84,21 @@ def main():
     fig.suptitle('AB testing: number of answers per user (only the first session)')
     analysis.savefig(args, fig, 'answers_per_user_session_0_hist')
 
+    fig = plt.figure()
+    graph.boxplot_success_per_user(fig, data, 'ab_group', mapping)
+    fig.suptitle('AB testing: mean success rate')
+    analysis.savefig(args, fig, 'success_per_user')
+
+    fig = plt.figure()
+    graph.plot_user_ratio(fig, data, 'ab_group', mapping, session_numbers=[2, 3, 4])
+    fig.suptitle('AB testing: Users with at least the given number of sessions')
+    analysis.savefig(args, fig, 'users_with_2_sessions')
+
+    fig = plt.figure()
+    graph.plot_user_ratio(fig, data, 'ab_group', mapping, answer_numbers=[20, 50, 100])
+    fig.suptitle('AB testing: Users with at least the given number of answers')
+    analysis.savefig(args, fig, 'users_with_100_answers')
+
 
 if __name__ == "__main__":
     main()
