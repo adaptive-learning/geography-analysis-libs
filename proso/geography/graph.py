@@ -11,37 +11,15 @@ def boxplot_answers_per_user(figure, answers, group_column, group_name_mapping=N
     ax = figure.add_subplot(111)
     labels = []
     to_plot = []
-    means = []
-    medians = []
-    stds = []
     for group_name, group_data in answers.groupby(group_column):
         number = user.answers_per_user(group_data)
         to_plot.append(number.values())
-        means.append(numpy.mean(number.values()))
-        stds.append(numpy.std(number.values()))
-        medians.append(numpy.median(number.values()))
         labels.append(
             str(group_name_mapping[group_name] if group_name_mapping else group_name) + '\n(' + str(len(number)) + ')')
-    if len(to_plot) == 2:
-        tstat, pvalue = scipy.stats.ttest_ind(numpy.log(to_plot[0]), numpy.log(to_plot[1]))
-        pvalue = str(int(100 * pvalue if pvalue else 0) / 100.0)
-        figure.text(
-            0.8, 0.8,
-            'p-value: ' + str(pvalue),
-            horizontalalignment='center', verticalalignment='baseline')
-    labels, to_plot, means, medians, stds = zip(*sorted(zip(labels, to_plot, means, medians, stds)))
-    ax.boxplot(to_plot)
-    ax.errorbar(range(1, len(to_plot) + 1), means, yerr=stds, fmt='o')
-    for i, m in zip(range(len(means)), means):
-        ax.annotate(int(numpy.round(m)), (i + 1, m))
-    for i, m in zip(range(len(medians)), medians):
-        ax.annotate(int(numpy.round(m)), (i + 1, m))
     ax.set_yscale('log')
-    ax.set_xticklabels(labels)
-    for label in ax.get_xticklabels():
-        label.set_rotation(10)
     ax.set_xlabel(group_column)
     ax.set_ylabel('number of answers')
+    _boxplot(ax, to_plot, labels)
     figure.tight_layout()
 
 
@@ -103,15 +81,7 @@ def boxplot_success_diff(figure, answers, group_column, session_number_first, se
             session_number_second)
         to_plot.append(diffs)
         labels.append(group_name + '\n(' + str(len(diffs)) + ')')
-    if len(to_plot) == 2:
-        tstat, pvalue = scipy.stats.ttest_ind(to_plot[0], to_plot[1])
-        pvalue = str(int(100 * pvalue if pvalue else 0) / 100.0)
-        figure.text(
-            0.8, 0.8,
-            'p-value: ' + str(pvalue),
-            horizontalalignment='center', verticalalignment='baseline')
-    ax.boxplot(to_plot)
-    ax.set_xticklabels(labels)
+    _boxplot(ax, to_plot, labels)
     ax.set_xlabel(group_column)
     ax.set_ylabel('relative success difference')
 
@@ -128,9 +98,8 @@ def boxplot_prior_skill_diff(figure, answers, difficulty, group_column, session_
             session_number_second)
         to_plot.append(diffs)
         labels.append(group_name + '\n(' + str(len(diffs)) + ')')
-    ax.boxplot(to_plot)
+    _boxplot(ax, to_plot, labels)
     ax.set_yscale('log')
-    ax.set_xticklabels(labels)
     ax.set_xlabel(group_column)
     ax.set_ylabel('relative difference between prior skills')
 
@@ -270,6 +239,34 @@ def plot_success_per_week(figure, answers):
     ax.set_xlabel('week from project start')
     ax.set_ylabel('success rate')
     ax.legend()
+
+
+def _boxplot(ax, to_plot, labels):
+    if len(to_plot) == 2:
+        tstat, pvalue = scipy.stats.ttest_ind(numpy.log(to_plot[0]), numpy.log(to_plot[1]))
+        pvalue = str(int(100 * pvalue if pvalue else 0) / 100.0)
+        ax.text(
+            0.8, 0.8,
+            'p-value: ' + str(pvalue),
+            horizontalalignment='center', verticalalignment='baseline')
+    means = []
+    medians = []
+    stds = []
+    for i in to_plot:
+        means.append(numpy.mean(i))
+        stds.append(numpy.std(i))
+        medians.append(numpy.median(i))
+    labels, to_plot, means, medians, stds = zip(*sorted(
+        zip(labels, to_plot, means, medians, stds)))
+    ax.boxplot(to_plot)
+    ax.errorbar(range(1, len(to_plot) + 1), means, yerr=stds, fmt='o')
+    for i, m in zip(range(len(means)), means):
+        ax.annotate(str(numpy.round(m, 2)), (i + 1, m))
+    for i, m in zip(range(len(medians)), medians):
+        ax.annotate(str(numpy.round(m, 2)), (i + 1, m))
+    ax.set_xticklabels(labels)
+    for label in ax.get_xticklabels():
+        label.set_rotation(10)
 
 
 def _plot_errorbar(plt, data, **argw):
