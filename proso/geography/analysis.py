@@ -143,7 +143,7 @@ def load_prior_skill(args, data, difficulty):
 def savefig(args, figure, name):
     if not path.exists(args.destination):
         makedirs(args.destination)
-    figure.save(args.destination + '/' + name + '.' + args.output)
+    figure.savefig(args.destination + '/' + name + '.' + args.output, bbox_inches='tight')
 
 
 def is_group(args, group):
