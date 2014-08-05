@@ -41,7 +41,6 @@ def hist_answers_per_user(figure, answers, group_column, group_name_mapping=None
         normed=True,
         )
     ax.legend()
-    ax.set_ylim(0, 1)
     ax.set_xlabel("Number of Answers (log)")
     ax.set_ylabel("Number of Users (normed)")
     figure.tight_layout()
