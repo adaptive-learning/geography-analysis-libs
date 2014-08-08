@@ -84,6 +84,4 @@ def answers_per_user(answers):
     return (answers.
         groupby('user').
         apply(len).
-        reset_index().
-        sort(0, ascending=False)[0].
         to_dict())
