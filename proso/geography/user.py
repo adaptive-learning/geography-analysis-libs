@@ -6,6 +6,11 @@ import decorator
 import pandas
 
 
+def session_per_user(answers):
+    answers = decorator.session_number(answers)
+    return answers.groupby('user').apply(lambda x: x['session_number'].max()).to_dict()
+
+
 def user_ratio(answers, session_number=None, answer_number=None):
     answers = decorator.session_number(answers)
 

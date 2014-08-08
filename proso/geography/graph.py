@@ -7,6 +7,48 @@ import numpy
 import scipy.stats
 
 
+def plot_answers_vs_prior_skill(figure, answers, prior_skill):
+    answers = decorator.session_number(answers)
+    ax = figure.add_subplot(111)
+    total = user.answers_per_user(answers)
+    users = answers['user'].unique()
+    vals = lambda x: [x[i] for i in users]
+    total, prior_skill = zip(*sorted(zip(vals(total), vals(prior_skill))))
+    ax.plot(total, prior_skill, 'o', alpha=0.3, linewidth=0, color='black')
+    ax.set_xlabel('number of answer at all')
+    ax.set_ylabel('prior skill')
+    ax.set_xscale('log')
+
+
+def plot_first_session_vs_total(figure, answers):
+    answers = decorator.session_number(answers)
+    ax = figure.add_subplot(111)
+    total = user.answers_per_user(answers)
+    total_first = user.answers_per_user(answers[answers['session_number'] == 0])
+    users = answers['user'].unique()
+    vals = lambda x: [x[i] for i in users]
+    total_first, total = zip(*sorted(zip(vals(total_first), vals(total))))
+    ax.plot(total_first, total, 'o', alpha=0.3, linewidth=0, color='black')
+    ax.set_xlabel('number of answers in the first session')
+    ax.set_ylabel('number of answer at all')
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+
+
+def plot_first_session_vs_session_number(figure, answers):
+    answers = decorator.session_number(answers)
+    ax = figure.add_subplot(111)
+    ses = user.session_per_user(answers)
+    total_first = user.answers_per_user(answers[answers['session_number'] == 0])
+    users = answers['user'].unique()
+    vals = lambda x: [x[i] for i in users]
+    total_first, ses = zip(*sorted(zip(vals(total_first), vals(ses))))
+    ax.plot(total_first, ses, 'o', alpha=0.3, linewidth=0, color='black')
+    ax.set_xlabel('number of answers in the first session')
+    ax.set_ylabel('maximal session number')
+    ax.set_xscale('log')
+
+
 def plot_user_ratio(figure, answers, group_column, group_name_mapping=None, answer_numbers=None, session_numbers=None):
     ax = figure.add_subplot(111)
     group_names = []

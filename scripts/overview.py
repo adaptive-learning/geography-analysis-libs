@@ -6,12 +6,13 @@ import proso.geography.analysis as analysis
 
 def main():
     parser = analysis.parser_init()
-    parser = analysis.parser_group(parser, ['time', 'session', 'recommendation', 'knowledge'])
+    parser = analysis.parser_group(parser,
+        ['time', 'session', 'recommendation', 'knowledge', 'motivation'])
     args = parser.parse_args()
     data = analysis.load_answers(args)
-    if analysis.is_any_group(args, ['recommendation', 'knowledge']):
+    if analysis.is_any_group(args, ['recommendation', 'knowledge', 'motivation']):
         difficulty = analysis.load_difficulty(args, data)
-    if analysis.is_any_group(args, ['recommendation']):
+    if analysis.is_any_group(args, ['recommendation', 'motivation']):
         prior_skill = analysis.load_prior_skill(args, data, difficulty)
     if analysis.is_group(args, 'time'):
         fig = plt.figure()
@@ -40,6 +41,16 @@ def main():
         fig = plt.figure()
         graph.plot_session_prior_skill(fig, data, difficulty)
         analysis.savefig(args, fig, 'session_prior_skill')
+    if analysis.is_group(args, 'motivation'):
+        fig = plt.figure()
+        graph.plot_first_session_vs_total(fig, data)
+        analysis.savefig(args, fig, 'first_session_vs_total')
+        fig = plt.figure()
+        graph.plot_first_session_vs_session_number(fig, data)
+        analysis.savefig(args, fig, 'first_session_vs_session')
+        fig = plt.figure()
+        graph.plot_answers_vs_prior_skill(fig, data, prior_skill)
+        analysis.savefig(args, fig, 'answers_vs_prior_skill')
 
 
 if __name__ == "__main__":
