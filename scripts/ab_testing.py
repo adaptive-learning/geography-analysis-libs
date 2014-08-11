@@ -89,15 +89,17 @@ def main():
     fig.suptitle('AB testing: mean success rate')
     analysis.savefig(args, fig, 'success_per_user')
 
-    fig = plt.figure()
-    graph.plot_user_ratio(fig, data, 'ab_group', mapping, session_numbers=[2, 3, 4])
-    fig.suptitle('AB testing: Users with at least the given number of sessions')
-    analysis.savefig(args, fig, 'users_with_2_sessions')
+    if all(map(lambda x: not isinstance(x, str) or x.isdigit(), mapping.values())):
+        print map(type, mapping.values())
+        fig = plt.figure()
+        graph.plot_user_ratio(fig, data, 'ab_group', mapping, session_numbers=[2, 3, 4])
+        fig.suptitle('AB testing: Users with at least the given number of sessions')
+        analysis.savefig(args, fig, 'users_with_2_sessions')
 
-    fig = plt.figure()
-    graph.plot_user_ratio(fig, data, 'ab_group', mapping, answer_numbers=[20, 50, 100])
-    fig.suptitle('AB testing: Users with at least the given number of answers')
-    analysis.savefig(args, fig, 'users_with_100_answers')
+        fig = plt.figure()
+        graph.plot_user_ratio(fig, data, 'ab_group', mapping, answer_numbers=[20, 50, 100])
+        fig.suptitle('AB testing: Users with at least the given number of answers')
+        analysis.savefig(args, fig, 'users_with_100_answers')
 
 
 if __name__ == "__main__":
