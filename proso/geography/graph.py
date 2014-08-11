@@ -128,7 +128,7 @@ def hist_answers_per_user(figure, answers, group_column, group_name_mapping=None
         label=[group_name + ' (' + str(len(to_plot)) + ')' for group_name, to_plot in zip(group_names, to_plots)],
         normed=True,
         )
-    ax.legend()
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     ax.set_xlabel("Number of Answers (log)")
     ax.set_ylabel("Number of Users (normed)")
     figure.tight_layout()
@@ -153,7 +153,7 @@ def hist_rolling_success(figure, answers, prior_skill):
         label=['Users with Low Skill', 'Users with Medium Skill', 'Users with High Skill'],
         bins=10,
         normed=True)
-    ax.legend(loc='upper left')
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     figure.tight_layout()
 
 
@@ -325,7 +325,7 @@ def plot_success_per_week(figure, answers):
     ax.plot(xs, zip(*by_user)[1], 'r-v', label='mean success rate by user')
     ax.set_xlabel('week from project start')
     ax.set_ylabel('success rate')
-    ax.legend()
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
 
 def _boxplot(ax, to_plot, labels):
