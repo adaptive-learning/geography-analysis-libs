@@ -5,6 +5,7 @@ import overtime
 import success
 import numpy
 import scipy.stats
+import math
 
 
 def plot_answers_vs_prior_skill(figure, answers, prior_skill):
@@ -330,7 +331,7 @@ def plot_success_per_week(figure, answers):
 def _boxplot(ax, to_plot, labels):
     if len(to_plot) == 2:
         tstat, pvalue = scipy.stats.ttest_ind(numpy.log(to_plot[0]), numpy.log(to_plot[1]))
-        pvalue = str(int(100 * pvalue if pvalue else 0) / 100.0)
+        pvalue = str(int(100 * pvalue if not math.isnan(pvalue) else 0) / 100.0)
         ax.text(
             0.8, 0.8,
             'p-value: ' + str(pvalue),
