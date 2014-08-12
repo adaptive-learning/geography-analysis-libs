@@ -1,4 +1,5 @@
 from os import path
+import sys
 import matplotlib.pyplot as plt
 import proso.geography.graph as graph
 import proso.geography.user as user
@@ -6,6 +7,7 @@ import proso.geography.analysis as analysis
 import proso.geography.answers as answer
 import proso.geography.decorator as decorator
 import proso.geography.abtesting as abtesting
+import proso.geography.textstats as textstats
 
 
 def load_parser():
@@ -77,6 +79,9 @@ def main():
         graph.plot_user_ratio(fig, data, 'ab_group', mapping, answer_numbers_min=[20, 50, 100])
         fig.suptitle('AB testing: Users with at least the given number of answers')
         analysis.savefig(args, fig, 'users_with_100_answers')
+
+    textstats.answers_per_user(sys.stdout, data, 'ab_group', mapping)
+    textstats.user_ratio(sys.stdout, data, 'ab_group', mapping)
 
 
 if __name__ == "__main__":

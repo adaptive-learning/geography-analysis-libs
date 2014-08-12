@@ -5,3 +5,4 @@ pandas==0.13.1
 proso-geography-data==1.0.1
 proso-geography-model==1.1.1
 scipy==0.14.0
+prettytable==0.7.2
