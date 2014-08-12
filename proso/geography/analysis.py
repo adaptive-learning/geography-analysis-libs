@@ -87,27 +87,9 @@ def load_answers(args):
             answer_ab_values_csv=args.answer_ab_values,
             ab_value_csv=args.ab_values)
         if args.drop_classrooms:
-            classroom_users = [
-                user
-                for ip, users in (
-                    data.sort('id').drop_duplicates('user').
-                    groupby('ip_address').
-                    apply(lambda x: x['user'].unique()).
-                    to_dict().
-                    items())
-                for user in users
-                if len(users) > 5
-            ]
-            data = data[~data['user'].isin(classroom_users)]
+            data = answer.drop_classrooms(data)
         if args.answers_per_user:
-            valid_users = map(
-                lambda (u, n): u,
-                filter(
-                    lambda (u, n): n >= args.answers_per_user,
-                    data.groupby('user').apply(len).to_dict().items()
-                )
-            )
-            data = data[data['user'].isin(valid_users)]
+            data = answer.drop_users_by_answers(data, args.answers_per_user)
         if args.optimize:
             data = decorator_optimization(data)
             data.to_csv(args.destination + '/geography.answer.csv', index=False)

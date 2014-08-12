@@ -2,6 +2,43 @@ import numpy as np
 import pandas as pd
 
 
+def interested_ab_values(answers, group_prefixes, override=False):
+    if not override and 'interested_ab_values' in answers:
+        return answers
+
+    def filter_by_prefix(ab_values):
+        return [
+            v for v in ab_values
+            if any([v.startswith(p) for p in group_prefixes])
+        ]
+    answers['interested_ab_values'] = (
+        answers['ab_values'].
+        apply(lambda values: '__'.join(sorted(filter_by_prefix(values))))
+    )
+    return answers
+
+
+def ab_group(answers, group_prefixes, override=False):
+    if not override and 'ab_group' in answers:
+        return answers
+    if 'interested_ab_values' not in answers:
+        answers = interested_ab_values(answers, group_prefixes)
+
+    def drop_prefixes(name, prefixes):
+        for prefix in prefixes:
+            name = name.replace(prefix, "")
+        return name
+    uniques = answers['interested_ab_values'].unique()
+    mapping = dict(zip(
+        range(len(uniques)),
+        map(lambda x: drop_prefixes(x, group_prefixes), uniques)))
+    mapping_reverse = dict(zip(
+        uniques,
+        range(len(uniques))))
+    answers['ab_group'] = answers['interested_ab_values'].apply(lambda x: mapping_reverse[x])
+    return answers, mapping
+
+
 def session_number(answers, delta_in_seconds=1800, override=False):
     '''
     Assign session number to every answer.
