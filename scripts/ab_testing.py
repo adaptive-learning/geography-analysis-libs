@@ -74,7 +74,7 @@ def main():
         analysis.savefig(args, fig, 'users_with_2_sessions')
 
         fig = plt.figure()
-        graph.plot_user_ratio(fig, data, 'ab_group', mapping, answer_numbers=[20, 50, 100])
+        graph.plot_user_ratio(fig, data, 'ab_group', mapping, answer_numbers_min=[20, 50, 100])
         fig.suptitle('AB testing: Users with at least the given number of answers')
         analysis.savefig(args, fig, 'users_with_100_answers')
 

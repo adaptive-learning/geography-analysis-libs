@@ -50,7 +50,7 @@ def plot_first_session_vs_session_number(figure, answers):
     ax.set_xscale('log')
 
 
-def plot_user_ratio(figure, answers, group_column, group_name_mapping=None, answer_numbers=None, session_numbers=None):
+def plot_user_ratio(figure, answers, group_column, group_name_mapping=None, answer_numbers_min=None, session_numbers=None):
     ax = figure.add_subplot(111)
     group_names = []
     to_plots = []
@@ -58,11 +58,11 @@ def plot_user_ratio(figure, answers, group_column, group_name_mapping=None, answ
     for group_name, group_data in answers.groupby(group_column):
         to_plot = []
         current_labels = []
-        if answer_numbers is not None:
-            for num in answer_numbers:
+        if answer_numbers_min is not None:
+            for num in answer_numbers_min:
                 to_plot.append(user.user_ratio(
                     group_data,
-                    answer_number=num))
+                    answer_number_min=num))
                 current_labels.append(str(num) + ' answers')
         else:
             for num in session_numbers:

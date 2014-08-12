@@ -11,14 +11,16 @@ def session_per_user(answers):
     return answers.groupby('user').apply(lambda x: x['session_number'].max()).to_dict()
 
 
-def user_ratio(answers, session_number=None, answer_number=None):
+def user_ratio(answers, session_number=None, answer_number_min=None, answer_number_max=None):
     answers = decorator.session_number(answers)
 
     def user_ratio_filter(data):
         if session_number is not None and session_number > data['session_number'].max():
             return False
-        if answer_number is not None:
-            return answer_number <= len(data)
+        if answer_number_min is not None:
+            return answer_number_min <= len(data)
+        if answer_number_max is not None:
+            return answer_number_max >= len(data)
         return True
     return sum(answers.groupby('user').apply(user_ratio_filter)) / float(answers['user'].nunique())
 
