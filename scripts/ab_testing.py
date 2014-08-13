@@ -12,7 +12,7 @@ import proso.geography.textstats as textstats
 
 def load_parser():
     parser = analysis.parser_init(required=['--ab-values', '--answer-ab-values'])
-    parser = analysis.parser_group(parser, ['time', 'session', 'recommendation', 'knowledge'])
+    parser = analysis.parser_group(parser, ['motivation', 'progress', 'text'])
     parser.add_argument(
         '--interested-prefixes',
         nargs='+',
@@ -40,36 +40,36 @@ def main():
     data = load_answers_to_ab_testing(args)
     data, mapping = decorator.ab_group(data, args.interested_prefixes)
 
-    fig = plt.figure()
-    graph.boxplot_answers_per_user(fig, data, 'ab_group', mapping)
-    fig.suptitle('AB testing: number of answers per user')
-    analysis.savefig(args, fig, 'answers_per_user_boxplot')
+    if analysis.is_any_group(args, 'motivation'):
+        fig = plt.figure()
+        graph.boxplot_answers_per_user(fig, data, 'ab_group', mapping)
+        fig.suptitle('AB testing: number of answers per user')
+        analysis.savefig(args, fig, 'answers_per_user_boxplot')
 
-    fig = plt.figure()
-    graph.hist_answers_per_user(fig, data, 'ab_group', mapping)
-    fig.suptitle('AB testing: number of answers per user')
-    analysis.savefig(args, fig, 'answers_per_user_hist')
+        fig = plt.figure()
+        graph.hist_answers_per_user(fig, data, 'ab_group', mapping)
+        fig.suptitle('AB testing: number of answers per user')
+        analysis.savefig(args, fig, 'answers_per_user_hist')
 
-    fig = plt.figure()
-    data = decorator.session_number(data)
-    graph.boxplot_answers_per_user(fig,
-        data[data['session_number'] == 0], 'ab_group', mapping)
-    fig.suptitle('AB testing: number of answers per user (only the first session)')
-    analysis.savefig(args, fig, 'answers_per_user_session_0_boxplot')
+        fig = plt.figure()
+        data = decorator.session_number(data)
+        graph.boxplot_answers_per_user(fig,
+            data[data['session_number'] == 0], 'ab_group', mapping)
+        fig.suptitle('AB testing: number of answers per user (only the first session)')
+        analysis.savefig(args, fig, 'answers_per_user_session_0_boxplot')
 
-    fig = plt.figure()
-    graph.hist_answers_per_user(fig,
-        data[data['session_number'] == 0], 'ab_group', mapping)
-    fig.suptitle('AB testing: number of answers per user (only the first session)')
-    analysis.savefig(args, fig, 'answers_per_user_session_0_hist')
+        fig = plt.figure()
+        graph.hist_answers_per_user(fig,
+            data[data['session_number'] == 0], 'ab_group', mapping)
+        fig.suptitle('AB testing: number of answers per user (only the first session)')
+        analysis.savefig(args, fig, 'answers_per_user_session_0_hist')
 
-    fig = plt.figure()
-    graph.boxplot_success_per_user(fig, data, 'ab_group', mapping)
-    fig.suptitle('AB testing: mean success rate')
-    analysis.savefig(args, fig, 'success_per_user')
+        fig = plt.figure()
+        graph.boxplot_success_per_user(fig, data, 'ab_group', mapping)
+        fig.suptitle('AB testing: mean success rate')
+        analysis.savefig(args, fig, 'success_per_user')
 
-    if all(map(lambda x: not isinstance(x, str) or x.isdigit(), mapping.values())):
-        print map(type, mapping.values())
+    if analysis.is_any_group(args, 'progress') and all(map(lambda x: not isinstance(x, str) or x.isdigit(), mapping.values())):
         fig = plt.figure()
         graph.plot_user_ratio(fig, data, 'ab_group', mapping, session_numbers=[2, 3, 4])
         fig.suptitle('AB testing: Users with at least the given number of sessions')
@@ -80,8 +80,9 @@ def main():
         fig.suptitle('AB testing: Users with at least the given number of answers')
         analysis.savefig(args, fig, 'users_with_100_answers')
 
-    textstats.answers_per_user(sys.stdout, data, 'ab_group', mapping)
-    textstats.user_ratio(sys.stdout, data, 'ab_group', mapping)
+    if analysis.is_any_group(args, 'text'):
+        textstats.answers_per_user(sys.stdout, data, 'ab_group', mapping)
+        textstats.user_ratio(sys.stdout, data, 'ab_group', mapping)
 
 
 if __name__ == "__main__":
