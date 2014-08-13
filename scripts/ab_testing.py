@@ -11,7 +11,7 @@ import proso.geography.textstats as textstats
 
 
 def load_parser():
-    parser = analysis.parser_init(required=['--ab-values', '--answer-ab-values'])
+    parser = analysis.parser_init()
     parser = analysis.parser_group(parser, ['motivation', 'progress', 'text'])
     parser.add_argument(
         '--interested-prefixes',

@@ -11,7 +11,7 @@ def parser_init(required=None):
         '-a',
         '--answers',
         metavar='FILE',
-        required=True,
+        required=_is_required(required, '--answers'),
         help='path to the CSV with answers')
     parser.add_argument(
         '--options',
@@ -57,6 +57,13 @@ def parser_init(required=None):
         type=int,
         dest='answers_per_user',
         help='drop user having less than the given number of answers')
+    parser.add_argument(
+        '--data-dir',
+        type=str,
+        metavar='DIRECTORY',
+        dest='data_dir',
+        default='./data',
+        help='directory with data files, used when the data files are specified')
     return parser
 
 
@@ -81,11 +88,21 @@ def load_answers(args):
     if path.exists(args.destination + '/geography.answer.csv'):
         return answer.from_csv(args.destination + '/geography.answer.csv')
     else:
+        answers_file = args.answers if args.answers else args.data_dir + '/geography.answer.csv'
+        options_file = args.options if args.options else args.data_dir + '/geography.answer_options.csv'
+        ab_values_file = args.ab_values if args.ab_values else args.data_dir + '/geography.ab_values.csv'
+        answer_ab_values_file = args.answer_ab_values if args.answer_ab_values else args.data_dir + '/geography.answer_ab_values.csv'
+        if not path.exists(options_file):
+            options_file = None
+        if not path.exists(ab_values_file):
+            ab_values_file = None
+        if not path.exists(answer_ab_values_file):
+            answer_ab_values_file = None
         data = answer.from_csv(
-            answer_csv=args.answers,
-            answer_options_csv=args.options,
-            answer_ab_values_csv=args.answer_ab_values,
-            ab_value_csv=args.ab_values)
+            answer_csv=answers_file,
+            answer_options_csv=options_file,
+            answer_ab_values_csv=answer_ab_values_file,
+            ab_value_csv=ab_values_file)
         if args.drop_classrooms:
             data = answer.drop_classrooms(data)
         if args.answers_per_user:
