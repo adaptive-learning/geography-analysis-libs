@@ -82,6 +82,7 @@ def main():
 
     if analysis.is_any_group(args, 'text'):
         textstats.answers_per_user(sys.stdout, data, 'ab_group', mapping)
+        textstats.answers_per_user_pvalues(sys.stdout, data, 'ab_group', mapping)
         textstats.user_ratio(sys.stdout, data, 'ab_group', mapping)
 
 
