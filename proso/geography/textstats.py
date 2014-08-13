@@ -1,12 +1,11 @@
 from prettytable import PrettyTable
 import proso.geography.user as user
 import numpy
+import scipy.stats
 
 
 def answers_per_user(output, answers, group_column, group_name_mapping=None):
-    output.write("----------------------------------------------------------------------\n")
-    output.write("  Answers per User                                                    \n")
-    output.write("----------------------------------------------------------------------\n")
+    _header(output, "Answers per User")
 
     table = PrettyTable([
         'Group', 'Size', 'Mean', "Std.", "Log Mean", 'Median', '25 Perc.', '75 Perc.'])
@@ -27,9 +26,7 @@ def answers_per_user(output, answers, group_column, group_name_mapping=None):
 
 
 def user_ratio(output, answers, group_column, group_name_mapping=None):
-    output.write("----------------------------------------------------------------------\n")
-    output.write("  User Ratios                                                         \n")
-    output.write("----------------------------------------------------------------------\n")
+    _header(output, "User Ratios")
 
     table = PrettyTable(['Group', '20 answers', "50 answers", "100 answers", '2 sessions'])
     table.align['Group'] = 'l'
@@ -42,3 +39,9 @@ def user_ratio(output, answers, group_column, group_name_mapping=None):
             numpy.round(user.user_ratio(group_data, session_number=2), 2)])
     output.write(table.get_string(sortby="Group"))
     output.write("\n")
+
+
+def _header(output, text):
+    output.write("----------------------------------------------------------------------\n")
+    output.write("  " + text + "\n")
+    output.write("----------------------------------------------------------------------\n")
