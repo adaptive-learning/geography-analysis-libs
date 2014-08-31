@@ -90,7 +90,7 @@ def load_answers(args):
     else:
         answers_file = args.answers if args.answers else args.data_dir + '/geography.answer.csv'
         options_file = args.options if args.options else args.data_dir + '/geography.answer_options.csv'
-        ab_values_file = args.ab_values if args.ab_values else args.data_dir + '/geography.ab_values.csv'
+        ab_values_file = args.ab_values if args.ab_values else args.data_dir + '/geography.ab_value.csv'
         answer_ab_values_file = args.answer_ab_values if args.answer_ab_values else args.data_dir + '/geography.answer_ab_values.csv'
         if not path.exists(options_file):
             options_file = None
