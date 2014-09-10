@@ -81,9 +81,10 @@ def main():
         analysis.savefig(args, fig, 'users_with_100_answers')
 
     if analysis.is_any_group(args, 'text'):
-        textstats.answers_per_user(sys.stdout, data, 'ab_group', mapping)
-        textstats.answers_per_user_pvalues(sys.stdout, data, 'ab_group', mapping)
-        textstats.user_ratio(sys.stdout, data, 'ab_group', mapping)
+        with open(args.destination + '/output.txt', 'w') as f:
+            textstats.answers_per_user(f, data, 'ab_group', mapping)
+            textstats.answers_per_user_pvalues(f, data, 'ab_group', mapping)
+            textstats.user_ratio(f, data, 'ab_group', mapping)
 
 
 if __name__ == "__main__":
