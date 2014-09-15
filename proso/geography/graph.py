@@ -54,32 +54,40 @@ def plot_user_ratio(figure, answers, group_column, group_name_mapping=None, answ
     ax = figure.add_subplot(111)
     group_names = []
     to_plots = []
+    annss = []
     labels = None
     for group_name, group_data in answers.groupby(group_column):
         to_plot = []
+        anns = []
         current_labels = []
         if answer_numbers_min is not None:
             for num in answer_numbers_min:
-                to_plot.append(user.user_ratio(
-                    group_data,
-                    answer_number_min=num))
+                filtered_users, all_users = user.user_ratio(group_data, answer_number_min=num)
+                to_plot.append(filtered_users / float(all_users))
+                anns.append('{}/{}'.format(filtered_users, all_users))
                 current_labels.append(str(num) + ' answers')
         else:
             for num in session_numbers:
-                to_plot.append(user.user_ratio(
+                filtered_users, all_users = user.user_ratio(
                     group_data,
-                    session_number=num))
+                    session_number=num)
+                to_plot.append(filtered_users / float(all_users))
+                anns.append('{}/{}'.format(filtered_users, all_users))
                 current_labels.append(str(num) + ' sessions')
         labels = current_labels
         to_plots.append(to_plot)
+        annss.append(anns)
         group_names.append(group_name_mapping[group_name] if group_name_mapping else group_name)
 
     to_plots = map(list, zip(*to_plots))
+    annss = map(list, zip(*annss))
     ax.set_xlabel(group_column)
     ax.set_ylabel('Ratio of Users')
-    for to_plot, label in zip(to_plots, labels):
-        group_names, to_plot = zip(*sorted(zip(group_names, to_plot)))
+    for to_plot, label, anns in zip(to_plots, labels, annss):
+        group_names, to_plot, annss = zip(*sorted(zip(group_names, to_plot, anns)))
         ax.plot(group_names, to_plot, label=label)
+        for g, v, ann in zip(group_names, to_plot, anns):
+            ax.annotate(ann, (g, v))
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
 

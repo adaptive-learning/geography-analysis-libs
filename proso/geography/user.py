@@ -26,7 +26,7 @@ def user_ratio(answers, session_number=None, answer_number_min=None, answer_numb
         if answer_number_max is not None:
             return answer_number_max >= len(data)
         return True
-    return sum(answers.groupby('user').apply(user_ratio_filter)) / float(answers['user'].nunique())
+    return sum(answers.groupby('user').apply(user_ratio_filter)), answers['user'].nunique()
 
 
 def prior_skill(answers, difficulty):
