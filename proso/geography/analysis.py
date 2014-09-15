@@ -106,7 +106,7 @@ def load_answers(args):
         if args.drop_classrooms:
             data = answer.drop_classrooms(data)
         if args.answers_per_user:
-            data = answer.drop_users_by_answers(data, answer_limit_min=args.answers_per_user)
+            data = answer.drop_users_by_answers(data, answer_limit=args.answers_per_user)
         if args.optimize:
             data = decorator_optimization(data)
             data.to_csv(args.destination + '/geography.answer.csv', index=False)

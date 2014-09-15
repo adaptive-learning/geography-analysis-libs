@@ -17,6 +17,6 @@ setup(
         'matplotlib>=1.3.1',
         'numpy>=1.8.0',
         'pandas>=0.13.1',
-        'proso-geography-data>=0.9.7'
+        'proso-geography-data>=1.0.1'
     ],
 )
