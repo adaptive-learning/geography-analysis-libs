@@ -12,7 +12,7 @@ import proso.geography.textstats as textstats
 
 def load_parser():
     parser = analysis.parser_init()
-    parser = analysis.parser_group(parser, ['motivation', 'progress', 'text'])
+    parser = analysis.parser_group(parser, ['motivation', 'progress', 'text', 'difference'])
     parser.add_argument(
         '--interested-prefixes',
         nargs='+',
@@ -89,6 +89,12 @@ def main():
         graph.plot_user_ratio(fig, data, 'ab_group', mapping, answer_numbers_min=[20, 30, 50])
         fig.suptitle('AB testing: Users with at least the given number of answers')
         analysis.savefig(args, fig, 'users_with_n_answers')
+
+    if analysis.is_any_group(args, 'difference'):
+        fig = plt.figure()
+        graph.boxplot_number_of_options(fig, data, 'ab_group', mapping)
+        fig.suptitle('AB testing: Number of options')
+        analysis.savefig(args, fig, 'number_of_options')
 
     if analysis.is_any_group(args, 'text'):
         with open(args.destination + '/output.txt', 'w') as f:

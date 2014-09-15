@@ -91,6 +91,18 @@ def plot_user_ratio(figure, answers, group_column, group_name_mapping=None, answ
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
 
+def boxplot_number_of_options(figure, answers, group_column, group_name_mapping=None):
+    ax = figure.add_subplot(111)
+    labels = []
+    to_plot = []
+    for group_name, group_data in answers.groupby(group_column):
+        opts = group_data['options'].map(lambda options: len(options))
+        to_plot.append(opts)
+        labels.append(
+            str(group_name_mapping[group_name] if group_name_mapping else group_name) + '\n(' + str(len(opts)) + ')')
+    _boxplot(ax, to_plot, labels)
+
+
 def boxplot_maps_per_user(figure, answers, group_column, group_name_mapping=None):
     ax = figure.add_subplot(111)
     labels = []
