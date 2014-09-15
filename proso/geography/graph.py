@@ -83,6 +83,18 @@ def plot_user_ratio(figure, answers, group_column, group_name_mapping=None, answ
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
 
+def boxplot_maps_per_user(figure, answers, group_column, group_name_mapping=None):
+    ax = figure.add_subplot(111)
+    labels = []
+    to_plot = []
+    for group_name, group_data in answers.groupby(group_column):
+        m = user.maps_per_user(group_data).values()
+        to_plot.append(m)
+        labels.append(
+            str(group_name_mapping[group_name] if group_name_mapping else group_name) + '\n(' + str(len(m)) + ')')
+    _boxplot(ax, to_plot, labels)
+
+
 def boxplot_success_per_user(figure, answers, group_column, group_name_mapping=None):
     ax = figure.add_subplot(111)
     labels = []
@@ -108,6 +120,29 @@ def boxplot_answers_per_user(figure, answers, group_column, group_name_mapping=N
     ax.set_xlabel(group_column)
     ax.set_ylabel('number of answers')
     _boxplot(ax, to_plot, labels)
+    figure.tight_layout()
+
+
+def hist_maps_per_user(figure, answers, group_column, group_name_mapping=None):
+    ax = figure.add_subplot(111)
+    to_plots = []
+    group_names = []
+    for group_name, group_data in answers.groupby(group_column):
+        to_plots.append(user.maps_per_user(group_data).values())
+        group_names.append(group_name)
+    if group_name_mapping:
+        group_names = [group_name_mapping[group_name] for group_name in group_names]
+    else:
+        group_names = map(str, group_names)
+    group_names, to_plots = zip(*sorted(zip(group_names, to_plots)))
+    ax.hist(
+        to_plots,
+        label=[group_name + ' (' + str(len(to_plot)) + ')' for group_name, to_plot in zip(group_names, to_plots)],
+        normed=True,
+        )
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    ax.set_xlabel("Number of Maps")
+    ax.set_ylabel("Number of Users (normed)")
     figure.tight_layout()
 
 

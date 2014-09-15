@@ -1,5 +1,6 @@
 from prettytable import PrettyTable
 import proso.geography.user as user
+import proso.geography.success as success
 import numpy
 import scipy.stats
 
@@ -8,7 +9,7 @@ def answers_per_user(output, answers, group_column, group_name_mapping=None):
     _header(output, "Answers per User")
 
     table = PrettyTable([
-        'Group', 'Size', 'Mean', "Std.", "Log Mean", 'Median', '25 Perc.', '75 Perc.'])
+        'Group', 'Size', 'Mean', "Std.", "Log Mean", 'Median', '25 Perc.', '75 Perc.', 'Mean Success'])
     table.align['Group'] = 'l'
     for group_name, group_data in answers.groupby(group_column):
         numbers = user.answers_per_user(group_data).values()
@@ -20,7 +21,8 @@ def answers_per_user(output, answers, group_column, group_name_mapping=None):
             numpy.round(2 ** numpy.mean(numpy.log2(numbers)), 2),
             numpy.median(numbers),
             numpy.round(numpy.percentile(numbers, 25), 2),
-            numpy.round(numpy.percentile(numbers, 75), 2)])
+            numpy.round(numpy.percentile(numbers, 75), 2),
+            numpy.round(numpy.mean(success.success_per_user(group_data).values()), 2)])
     output.write(table.get_string(sortby="Group"))
     output.write("\n")
 

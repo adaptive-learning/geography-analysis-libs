@@ -52,6 +52,16 @@ def main():
         analysis.savefig(args, fig, 'answers_per_user_hist')
 
         fig = plt.figure()
+        graph.boxplot_maps_per_user(fig, data, 'ab_group', mapping)
+        fig.suptitle('AB testing: number of maps per user')
+        analysis.savefig(args, fig, 'maps_per_user_boxplot')
+
+        fig = plt.figure()
+        graph.hist_maps_per_user(fig, data, 'ab_group', mapping)
+        fig.suptitle('AB testing: number of maps per user')
+        analysis.savefig(args, fig, 'maps_per_user_hist')
+
+        fig = plt.figure()
         data = decorator.session_number(data)
         graph.boxplot_answers_per_user(fig,
             data[data['session_number'] == 0], 'ab_group', mapping)
@@ -76,9 +86,9 @@ def main():
         analysis.savefig(args, fig, 'users_with_2_sessions')
 
         fig = plt.figure()
-        graph.plot_user_ratio(fig, data, 'ab_group', mapping, answer_numbers_min=[20, 50, 100])
+        graph.plot_user_ratio(fig, data, 'ab_group', mapping, answer_numbers_min=[20, 30, 50])
         fig.suptitle('AB testing: Users with at least the given number of answers')
-        analysis.savefig(args, fig, 'users_with_100_answers')
+        analysis.savefig(args, fig, 'users_with_n_answers')
 
     if analysis.is_any_group(args, 'text'):
         with open(args.destination + '/output.txt', 'w') as f:
