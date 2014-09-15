@@ -15,6 +15,12 @@ def maps_per_user(answers):
     return answers.groupby('user').apply(lambda x: len(x['place_map'].unique())).to_dict()
 
 
+def answers_pers_place_user(answers):
+    return (answers.
+        groupby(['user', 'place_asked']).
+        apply(len))
+
+
 def user_ratio(answers, session_number=None, answer_number_min=None, answer_number_max=None):
     answers = decorator.session_number(answers)
 

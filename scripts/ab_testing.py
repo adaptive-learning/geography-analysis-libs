@@ -96,6 +96,16 @@ def main():
         fig.suptitle('AB testing: Number of options')
         analysis.savefig(args, fig, 'number_of_options')
 
+        fig = plt.figure()
+        graph.boxplot_time_gap(fig, data, 'ab_group', mapping)
+        fig.suptitle('AB testing: Average Time Gap per User')
+        analysis.savefig(args, fig, 'time_gap')
+
+        fig = plt.figure()
+        graph.hist_answers_per_place_user(fig, data, 'ab_group', mapping)
+        fig.suptitle('AB testing: Number of Answer per Place and User')
+        analysis.savefig(args, fig, 'answers_per_place_user')
+
     if analysis.is_any_group(args, 'text'):
         with open(args.destination + '/output.txt', 'w') as f:
             textstats.answers_per_user(f, data, 'ab_group', mapping)

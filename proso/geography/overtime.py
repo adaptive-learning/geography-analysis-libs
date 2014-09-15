@@ -18,6 +18,20 @@ def success_by_user_per_week(answers):
         to_dict())
 
 
+def time_gap(answers):
+
+    def _time_gap(data):
+        items = map(
+            lambda (p, n): p,
+            filter(lambda (p, n): n > 1, data.groupby('place_asked').apply(len).to_dict().items()))
+        data = data[data['place_asked'].isin(items)]
+        result = data.groupby('place_asked').apply(
+            lambda d: (d['inserted'] - d['inserted'].shift(1)).mean().item() / 10.0 ** 9)
+        return result.to_dict().values()
+    result = answers.groupby('user').apply(_time_gap)
+    return result.to_dict()
+
+
 def users_per_week(answers):
     '''
     Number of user having answers in the given week.
