@@ -71,8 +71,15 @@ def data_hash(args):
 
 def parser_group(parser, groups):
     parser.add_argument(
-        '--group',
+        '--groups',
         choices=groups,
+        nargs='+',
+        help='generate only a limited set of plots')
+    parser.add_argument(
+        '--skip-groups',
+        choices=groups,
+        dest='skip_groups',
+        nargs='+',
         help='generate only a limited set of plots')
     return parser
 
@@ -170,11 +177,11 @@ def savefig(args, figure, name):
 
 
 def is_group(args, group):
-    return not args.group or args.group == group
+    return (not args.groups or group in args.groups) and (not args.skip_groups or group not in args.skip_groups)
 
 
 def is_any_group(args, groups):
-    return not args.group or args.group in groups
+    return any([is_group(args, group) for group in groups])
 
 
 def _is_required(required, name):
