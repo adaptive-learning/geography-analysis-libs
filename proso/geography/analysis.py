@@ -3,6 +3,8 @@ from os import path, makedirs
 import proso.geography.answers as answer
 import proso.geography.decorator as decorator
 import proso.geography.difficulty
+import gc
+import numpy as np
 
 
 def parser_init(required=None):
@@ -87,11 +89,23 @@ def load_answers(args):
         makedirs(args.destination)
     filename = '%s/geography.answer_%s.csv' % (args.destination, data_hash(args))
     filename_all = '%s/geography.answer.csv' % (args.destination)
+    answers_col_types = {
+        'session_number': np.uint8,
+        'options': str,
+        'ab_values': str,
+        'last_in_session': bool,
+        'rolling_success': np.float16
+    }
+    # assume the data are already sorted by id in CSV files
     if path.exists(filename):
-        return answer.from_csv(filename), answer.from_csv(filename_all)
+        return (
+            answer.from_csv(filename, answers_col_types=answers_col_types, should_sort=False),
+            answer.from_csv(filename_all, answers_col_types=answers_col_types, should_sort=False)
+        )
     else:
         if path.exists(args.destination + '/geography.answer.csv'):
-            data_all = answer.from_csv(args.destination + '/geography.answer.csv')
+            data_all = answer.from_csv(
+                args.destination + '/geography.answer.csv', answers_col_types=answers_col_types, should_sort=False)
         else:
             answers_file = args.answers if args.answers else args.data_dir + '/geography.answer.csv'
             options_file = args.options if args.options else args.data_dir + '/geography.answer_options.csv'
@@ -107,7 +121,9 @@ def load_answers(args):
                 answer_csv=answers_file,
                 answer_options_csv=options_file,
                 answer_ab_values_csv=answer_ab_values_file,
-                ab_value_csv=ab_values_file)
+                ab_value_csv=ab_values_file,
+                answers_col_types=answers_col_types,
+                should_sort=False)
             data_all = decorator_optimization(data_all)
             data_all.to_csv(args.destination + '/geography.answer.csv', index=False)
         data = data_all
@@ -129,6 +145,7 @@ def load_difficulty(args, data_all):
     else:
         difficulty = proso.geography.difficulty.csv_to_difficulty(
             args.destination + '/difficulty.csv')
+    gc.collect()
     return difficulty
 
 
@@ -142,6 +159,7 @@ def load_prior_skill(args, data_all, difficulty):
     else:
         prior_skill = proso.geography.user.csv_to_prior_skill(
             args.destination + '/prior_skill.csv')
+    gc.collect()
     return prior_skill
 
 

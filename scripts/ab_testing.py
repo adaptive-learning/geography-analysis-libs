@@ -24,7 +24,7 @@ def load_parser():
 
 
 def load_answers_to_ab_testing(args):
-    filename = args.destination + '/geography.answer.ab_testing_' + '__'.join(args.interested_prefixes) + '__' + analysis.data_hash(args) +_all '.csv'
+    filename = args.destination + '/geography.answer.ab_testing_' + '__'.join(args.interested_prefixes) + '__' + analysis.data_hash(args) + '.csv'
     if path.exists(filename):
         return answer.from_csv(filename)
     else:
