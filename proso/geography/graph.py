@@ -334,21 +334,23 @@ def plot_stay_on_rolling_success(figure, answers, prior_skill):
     figure.tight_layout()
 
 
-def plot_session_length(figure, answers):
+def plot_session_length(figure, answers, portion_min=0.01):
     if 'session_number' in answers:
         data = answers
     else:
         data = decorator.session_number(answers)
-    length = session.session_length(data)
+    session_limit = max([session_number if portion >= portion_min else 0
+        for session_number, portion in session.session_user_portion(answers).items()])
+    data = data[data['session_number'] <= session_limit]
+
+    length = session.session_length(data).items()
     ax1 = figure.add_subplot(111)
-    ax1.plot(zip(*length.items())[0], zip(*length.items())[1], 'b-')
+    ax1.plot(zip(*length)[0], zip(*length)[1], 'b-')
     ax1.set_xlabel('session number')
     ax1.set_ylabel('session length', color='b')
     for tl in ax1.get_yticklabels():
         tl.set_color('b')
 
-    session_limit = max([session_number if portion >= 0.01 else 0
-        for session_number, portion in session.session_user_portion(answers).items()])
     users_for_limit = data[data['session_number'] == session_limit]['user'].values
     data_for_limit = data[data['user'].isin(users_for_limit)]
     data_for_limit = data_for_limit[data_for_limit['session_number'] <= session_limit]
@@ -357,24 +359,28 @@ def plot_session_length(figure, answers):
         zip(*for_limit_length.items())[0],
         zip(*for_limit_length.items())[1], 'b--')
 
-    hist = session.session_users(data)
+    hist = session.session_users(data).items()
     ax2 = ax1.twinx()
     ax2.set_yscale('log')
     ax2.set_ylabel('number of users', color='r')
-    ax2.plot(zip(*hist.items())[0], zip(*hist.items())[1], 'r-.', linewidth=2)
+    ax2.plot(zip(*hist)[0], zip(*hist)[1], 'r-.', linewidth=2)
     for tl in ax2.get_yticklabels():
         tl.set_color('r')
 
 
-def plot_session_prior_skill(figure, answers, difficulty):
+def plot_session_prior_skill(figure, answers, difficulty, portion_min=0.01):
     if 'session_number' in answers:
         data = answers
     else:
         data = decorator.session_number(answers)
-    prior_skill = session.session_prior_skill(data, difficulty)
-    hist = session.session_users(data)
+    session_limit = max([session_number if portion >= portion_min else 0
+        for session_number, portion in session.session_user_portion(answers).items()])
+    data = data[data['session_number'] <= session_limit]
+
+    prior_skill = session.session_prior_skill(data, difficulty).items()
+    hist = session.session_users(data).items()
     ax1 = figure.add_subplot(111)
-    ax1.plot(zip(*prior_skill.items())[0], zip(*prior_skill.items())[1], 'b-')
+    ax1.plot(zip(*prior_skill)[0], zip(*prior_skill)[1], 'b-')
     ax1.set_xlabel('session number')
     ax1.set_ylabel('average prior skill', color='b')
     for tl in ax1.get_yticklabels():
@@ -383,20 +389,24 @@ def plot_session_prior_skill(figure, answers, difficulty):
     ax2 = ax1.twinx()
     ax2.set_yscale('log')
     ax2.set_ylabel('number of users', color='r')
-    ax2.plot(zip(*hist.items())[0], zip(*hist.items())[1], 'r-.', linewidth=2)
+    ax2.plot(zip(*hist)[0], zip(*hist)[1], 'r-.', linewidth=2)
     for tl in ax2.get_yticklabels():
         tl.set_color('r')
 
 
-def plot_session_success(figure, answers):
+def plot_session_success(figure, answers, portion_min=0.01):
     if 'session_number' in answers:
         data = answers
     else:
         data = decorator.session_number(answers)
-    success = session.session_success(data)
-    hist = session.session_users(data)
+    session_limit = max([session_number if portion >= portion_min else 0
+        for session_number, portion in session.session_user_portion(answers).items()])
+    data = data[data['session_number'] <= session_limit]
+
+    success = session.session_success(data).items()
+    hist = session.session_users(data).items()
     ax1 = figure.add_subplot(111)
-    ax1.plot(zip(*success.items())[0], zip(*success.items())[1], 'b-')
+    ax1.plot(zip(*success)[0], zip(*success)[1], 'b-')
     ax1.set_xlabel('session number')
     ax1.set_ylabel('success rate', color='b')
     for tl in ax1.get_yticklabels():
@@ -405,7 +415,7 @@ def plot_session_success(figure, answers):
     ax2 = ax1.twinx()
     ax2.set_yscale('log')
     ax2.set_ylabel('number of users', color='r')
-    ax2.plot(zip(*hist.items())[0], zip(*hist.items())[1], 'r-.', linewidth=2)
+    ax2.plot(zip(*hist)[0], zip(*hist)[1], 'r-.', linewidth=2)
     for tl in ax2.get_yticklabels():
         tl.set_color('r')
 
