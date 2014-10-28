@@ -83,7 +83,7 @@ def main():
         fig = plt.figure()
         graph.plot_user_ratio(fig, data, 'ab_group', mapping, session_numbers=[2, 3, 4])
         fig.suptitle('AB testing: Users with at least the given number of sessions')
-        analysis.savefig(args, fig, 'users_with_2_sessions')
+        analysis.savefig(args, fig, 'users_with_n_sessions')
 
         fig = plt.figure()
         graph.plot_user_ratio(fig, data, 'ab_group', mapping, answer_numbers_min=[20, 30, 50])
