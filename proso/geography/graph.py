@@ -325,11 +325,23 @@ def plot_stay_on_rolling_success(figure, answers, prior_skill):
     }
     i = 1
     for title, data in to_plot.items():
-        ax = figure.add_subplot(2, 2, i)
-        _plot_errorbar(ax, data)
-        ax.set_title(title)
-        ax.set_xlabel('rolling success rate (last 10 answers)')
-        ax.set_ylabel('probability of staying')
+        _to_errorbar = map(lambda (rolling_success, (m, std, _n)): (rolling_success, (m, std)), data)
+        _samples_num = map(lambda (rolling_success, (_m, _std, n)): (rolling_success, n), data)
+        ax1 = figure.add_subplot(2, 2, i)
+        _plot_errorbar(ax1, _to_errorbar)
+        ax1.set_title(title)
+        ax1.set_xlabel('rolling success rate (last 10 answers)')
+        ax1.set_ylabel('probability of staying')
+        ax1.set_ylim(0, 1.0)
+        ax2 = ax1.twinx()
+        ax2.set_yscale('log')
+        ax2.set_ylabel('number of samples')
+        ax2.plot(
+            zip(*_samples_num)[0],
+            zip(*_samples_num)[1],
+            'r:')
+        for tl in ax2.get_yticklabels():
+            tl.set_color('r')
         i += 1
     figure.tight_layout()
 
