@@ -9,11 +9,11 @@ def main():
     parser = analysis.parser_group(parser,
         ['time', 'session', 'recommendation', 'knowledge', 'motivation'])
     args = parser.parse_args()
-    data = analysis.load_answers(args)
+    data, data_all = analysis.load_answers(args)
     if analysis.is_any_group(args, ['recommendation', 'knowledge', 'motivation']):
-        difficulty = analysis.load_difficulty(args, data)
+        difficulty = analysis.load_difficulty(args, data_all)
     if analysis.is_any_group(args, ['recommendation', 'motivation']):
-        prior_skill = analysis.load_prior_skill(args, data, difficulty)
+        prior_skill = analysis.load_prior_skill(args, data_all, difficulty)
     if analysis.is_group(args, 'time'):
         fig = plt.figure()
         graph.plot_answers_per_week(fig, data)

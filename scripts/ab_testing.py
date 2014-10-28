@@ -24,12 +24,12 @@ def load_parser():
 
 
 def load_answers_to_ab_testing(args):
-    filename = args.destination + '/geography.answer.ab_testing_' + '__'.join(args.interested_prefixes) + '.csv'
+    filename = args.destination + '/geography.answer.ab_testing_' + '__'.join(args.interested_prefixes) + '__' + analysis.data_hash(args) +_all '.csv'
     if path.exists(filename):
         return answer.from_csv(filename)
     else:
-        data_all = analysis.load_answers(args)
-        data = abtesting.prepare_data(data_all, args.interested_prefixes)
+        data, _ = analysis.load_answers(args)
+        data = abtesting.prepare_data(data, args.interested_prefixes)
         data.to_csv(filename, index=False)
         return data
 

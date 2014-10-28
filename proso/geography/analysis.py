@@ -44,10 +44,6 @@ def parser_init(required=None):
         default='svg',
         help='extension for the output fles')
     parser.add_argument(
-        '--optimize',
-        action='store_true',
-        help='enables decorator optimization')
-    parser.add_argument(
         '--drop-classrooms',
         action='store_true',
         dest='drop_classrooms',
@@ -65,6 +61,10 @@ def parser_init(required=None):
         default='./data',
         help='directory with data files, used when the data files are specified')
     return parser
+
+
+def data_hash(args):
+    return 'apu_%s__dcs_%s' % (args.answers_per_user, args.drop_classrooms)
 
 
 def parser_group(parser, groups):
@@ -85,39 +85,45 @@ def decorator_optimization(answers):
 def load_answers(args):
     if not path.exists(args.destination):
         makedirs(args.destination)
-    if path.exists(args.destination + '/geography.answer.csv'):
-        return answer.from_csv(args.destination + '/geography.answer.csv')
+    filename = '%s/geography.answer_%s.csv' % (args.destination, data_hash(args))
+    filename_all = '%s/geography.answer.csv' % (args.destination)
+    if path.exists(filename):
+        return answer.from_csv(filename), answer.from_csv(filename_all)
     else:
-        answers_file = args.answers if args.answers else args.data_dir + '/geography.answer.csv'
-        options_file = args.options if args.options else args.data_dir + '/geography.answer_options.csv'
-        ab_values_file = args.ab_values if args.ab_values else args.data_dir + '/geography.ab_value.csv'
-        answer_ab_values_file = args.answer_ab_values if args.answer_ab_values else args.data_dir + '/geography.answer_ab_values.csv'
-        if not path.exists(options_file):
-            options_file = None
-        if not path.exists(ab_values_file):
-            ab_values_file = None
-        if not path.exists(answer_ab_values_file):
-            answer_ab_values_file = None
-        data = answer.from_csv(
-            answer_csv=answers_file,
-            answer_options_csv=options_file,
-            answer_ab_values_csv=answer_ab_values_file,
-            ab_value_csv=ab_values_file)
+        if path.exists(args.destination + '/geography.answer.csv'):
+            data_all = answer.from_csv(args.destination + '/geography.answer.csv')
+        else:
+            answers_file = args.answers if args.answers else args.data_dir + '/geography.answer.csv'
+            options_file = args.options if args.options else args.data_dir + '/geography.answer_options.csv'
+            ab_values_file = args.ab_values if args.ab_values else args.data_dir + '/geography.ab_value.csv'
+            answer_ab_values_file = args.answer_ab_values if args.answer_ab_values else args.data_dir + '/geography.answer_ab_values.csv'
+            if not path.exists(options_file):
+                options_file = None
+            if not path.exists(ab_values_file):
+                ab_values_file = None
+            if not path.exists(answer_ab_values_file):
+                answer_ab_values_file = None
+            data_all = answer.from_csv(
+                answer_csv=answers_file,
+                answer_options_csv=options_file,
+                answer_ab_values_csv=answer_ab_values_file,
+                ab_value_csv=ab_values_file)
+            data_all = decorator_optimization(data_all)
+            data_all.to_csv(args.destination + '/geography.answer.csv', index=False)
+        data = data_all
         if args.drop_classrooms:
             data = answer.drop_classrooms(data)
         if args.answers_per_user:
-            data = answer.drop_users_by_answers(data, answer_limit=args.answers_per_user)
-        if args.optimize:
-            data = decorator_optimization(data)
-            data.to_csv(args.destination + '/geography.answer.csv', index=False)
-        return data
+            data = answer.drop_users_by_answers(data, answer_limit_min=args.answers_per_user)
+        data.to_csv(filename, index=False)
+        return data, data_all
 
 
-def load_difficulty(args, data):
+def load_difficulty(args, data_all):
     if not path.exists(args.destination):
         makedirs(args.destination)
     if not path.exists(args.destination + '/difficulty.csv'):
-        difficulty = proso.geography.difficulty.prepare_difficulty(data)
+        difficulty = proso.geography.difficulty.prepare_difficulty(data_all)
         proso.geography.difficulty.difficulty_to_csv(
             difficulty, args.destination + '/difficulty.csv')
     else:
@@ -126,11 +132,11 @@ def load_difficulty(args, data):
     return difficulty
 
 
-def load_prior_skill(args, data, difficulty):
+def load_prior_skill(args, data_all, difficulty):
     if not path.exists(args.destination):
         makedirs(args.destination)
     if not path.exists(args.destination + '/prior_skill.csv'):
-        prior_skill = proso.geography.user.prior_skill(data, difficulty)
+        prior_skill = proso.geography.user.prior_skill(data_all, difficulty)
         proso.geography.user.prior_skill_to_csv(
             prior_skill, args.destination + '/prior_skill.csv')
     else:
