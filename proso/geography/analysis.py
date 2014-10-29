@@ -51,6 +51,11 @@ def parser_init(required=None):
         dest='drop_classrooms',
         help='drop users having some of the first answer from classroom')
     parser.add_argument(
+        '--drop-tests',
+        action='store_true',
+        dest='drop_tests',
+        help='drop users having at least one test answer')
+    parser.add_argument(
         '--answers-per-user',
         type=int,
         dest='answers_per_user',
@@ -66,7 +71,7 @@ def parser_init(required=None):
 
 
 def data_hash(args):
-    return 'apu_%s__dcs_%s' % (args.answers_per_user, args.drop_classrooms)
+    return 'apu_%s__dcs_%s__dts_%s' % (args.answers_per_user, args.drop_classrooms, args.drop_tests)
 
 
 def parser_group(parser, groups):
@@ -134,6 +139,8 @@ def load_answers(args):
             data_all = decorator_optimization(data_all)
             data_all.to_csv(args.destination + '/geography.answer.csv', index=False)
         data = data_all
+        if args.drop_tests:
+            data = answer.apply_filter(data, lambda x: np.isnan(x['test_id']))
         if args.drop_classrooms:
             data = answer.drop_classrooms(data)
         if args.answers_per_user:
