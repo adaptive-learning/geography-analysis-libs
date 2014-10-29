@@ -52,12 +52,16 @@ def user_ratio(output, answers, group_column, group_name_mapping=None):
     table = PrettyTable(['Group', '20 answers', "50 answers", "100 answers", '2 sessions'])
     table.align['Group'] = 'l'
     for group_name, group_data in answers.groupby(group_column):
+        cell_ans_num_20 = user.user_ratio(group_data, answer_number_min=20)
+        cell_ans_num_50 = user.user_ratio(group_data, answer_number_min=50)
+        cell_ans_num_100 = user.user_ratio(group_data, answer_number_min=100)
+        cell_sess_num_2 = user.user_ratio(group_data, session_number=2)
         table.add_row([
             group_name if group_name_mapping is None else group_name_mapping[group_name],
-            numpy.round(user.user_ratio(group_data, answer_number_min=20), 2),
-            numpy.round(user.user_ratio(group_data, answer_number_min=50), 2),
-            numpy.round(user.user_ratio(group_data, answer_number_min=100), 2),
-            numpy.round(user.user_ratio(group_data, session_number=2), 2)])
+            numpy.round(cell_ans_num_20[0] / float(cell_ans_num_20[1]), 2),
+            numpy.round(cell_ans_num_50[0] / float(cell_ans_num_50[1]), 2),
+            numpy.round(cell_ans_num_100[0] / float(cell_ans_num_100[1]), 2),
+            numpy.round(cell_sess_num_2[0] / float(cell_sess_num_2[1]), 2)])
     output.write(table.get_string(sortby="Group"))
     output.write("\n")
 
