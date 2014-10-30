@@ -26,8 +26,8 @@ def rolling_success_per_user(answers, window_length=10):
         data = answers
     else:
         data = decorator.rolling_success(answers, window_length=window_length)
+    data = data[~data['rolling_success'].isnull()]
     return (data.
-        dropna().
         groupby('user').
         apply(lambda x: (x['rolling_success'].dropna().mean(), x['rolling_success'].dropna().std())).
         to_dict())
