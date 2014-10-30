@@ -5,6 +5,7 @@ import proso.geography.decorator as decorator
 import proso.geography.difficulty
 import gc
 import numpy as np
+import pandas
 
 
 def parser_init(required=None):
@@ -67,7 +68,38 @@ def parser_init(required=None):
         dest='data_dir',
         default='./data',
         help='directory with data files, used when the data files are specified')
+    parser.add_argument(
+        '--storage',
+        type=str,
+        default='hdf',
+        choices=['csv', 'hdf'])
     return parser
+
+
+def write_cache(args, dataframe, filename, force_storage=None):
+    if not path.exists(args.destination):
+        makedirs(args.destination)
+    if args.storage == 'csv' and (force_storage is None or force_storage == 'csv'):
+        print 'writing CSV cache "%s"' % filename
+        dataframe.to_csv('%s/%s.csv' % (args.destination, filename), index=False)
+    else:
+        print 'writing HDF cache "%s"' % filename
+        dataframe.to_hdf('%s/storage.hdf' % args.destination, filename.replace('.', '_'))
+
+
+def read_cache(args, filename, csv_parser=None):
+    try:
+        print 'trying to read HDF cache "%s"' % filename
+        return pandas.read_hdf('%s/storage.hdf' % args.destination, filename.replace('.', '_'))
+    except:
+        print 'failed to read HDF cache "%s"' % filename
+        print 'trying to read CSV cache "%s"' % filename
+        if csv_parser:
+            data = csv_parser('%s/%s.csv' % (args.destination, filename))
+        else:
+            data = pandas.read_csv('%s/%s.csv' % (args.destination, filename), index_col=False)
+        write_cache(args, data, filename, force_storage='hdf')
+        return data
 
 
 def data_hash(args):
@@ -97,82 +129,63 @@ def decorator_optimization(answers):
 
 
 def load_answers(args):
-    if not path.exists(args.destination):
-        makedirs(args.destination)
-    filename = '%s/geography.answer_%s.csv' % (args.destination, data_hash(args))
-    filename_all = '%s/geography.answer.csv' % (args.destination)
-    answers_col_types = {
-        'session_number': np.uint8,
-        'options': str,
-        'ab_values': str,
-        'last_in_session': bool,
-        'rolling_success': np.float16
-    }
-    # assume the data are already sorted by id in CSV files
-    if path.exists(filename):
-        return (
-            answer.from_csv(filename, answers_col_types=answers_col_types, should_sort=False),
-            answer.from_csv(filename_all, answers_col_types=answers_col_types, should_sort=False)
-        )
-    else:
-        if path.exists(args.destination + '/geography.answer.csv'):
-            data_all = answer.from_csv(
-                args.destination + '/geography.answer.csv', answers_col_types=answers_col_types, should_sort=False)
-        else:
-            answers_file = args.answers if args.answers else args.data_dir + '/geography.answer.csv'
-            options_file = args.options if args.options else args.data_dir + '/geography.answer_options.csv'
-            ab_values_file = args.ab_values if args.ab_values else args.data_dir + '/geography.ab_value.csv'
-            answer_ab_values_file = args.answer_ab_values if args.answer_ab_values else args.data_dir + '/geography.answer_ab_values.csv'
-            if not path.exists(options_file):
-                options_file = None
-            if not path.exists(ab_values_file):
-                ab_values_file = None
-            if not path.exists(answer_ab_values_file):
-                answer_ab_values_file = None
-            data_all = answer.from_csv(
-                answer_csv=answers_file,
-                answer_options_csv=options_file,
-                answer_ab_values_csv=answer_ab_values_file,
-                ab_value_csv=ab_values_file,
-                answers_col_types=answers_col_types,
-                should_sort=False)
-            data_all = decorator_optimization(data_all)
-            data_all.to_csv(args.destination + '/geography.answer.csv', index=False)
-        data = data_all
-        if args.drop_tests:
-            data = answer.apply_filter(data, lambda x: np.isnan(x['test_id']))
-        if args.drop_classrooms:
-            data = answer.drop_classrooms(data)
-        if args.answers_per_user:
-            data = answer.drop_users_by_answers(data, answer_limit_min=args.answers_per_user)
-        data.to_csv(filename, index=False)
+    filename = 'geography.answer_%s' % data_hash(args)
+    data_all = load_answers_all(args)
+    data = read_cache(args, filename, csv_parser=answer.from_csv)
+    if data is not None:
         return data, data_all
+    data = data_all
+    if args.drop_tests:
+        data = answer.apply_filter(data, lambda x: np.isnan(x['test_id']))
+    if args.drop_classrooms:
+        data = answer.drop_classrooms(data)
+    if args.answers_per_user:
+        data = answer.drop_users_by_answers(data, answer_limit_min=args.answers_per_user)
+    write_cache(args, data, filename)
+    return data, data_all
+
+
+def load_answers_all(args):
+    data = read_cache(args, 'geography.answer', csv_parser=answer.from_csv)
+    if data is not None:
+        return data
+    answers_file = args.answers if args.answers else args.data_dir + '/geography.answer.csv'
+    options_file = args.options if args.options else args.data_dir + '/geography.answer_options.csv'
+    ab_values_file = args.ab_values if args.ab_values else args.data_dir + '/geography.ab_value.csv'
+    answer_ab_values_file = args.answer_ab_values if args.answer_ab_values else args.data_dir + '/geography.answer_ab_values.csv'
+    if not path.exists(options_file):
+        options_file = None
+    if not path.exists(ab_values_file):
+        ab_values_file = None
+    if not path.exists(answer_ab_values_file):
+        answer_ab_values_file = None
+    data = answer.from_csv(
+        answer_csv=answers_file,
+        answer_options_csv=options_file,
+        answer_ab_values_csv=answer_ab_values_file,
+        ab_value_csv=ab_values_file,
+        should_sort=False)
+    data = decorator_optimization(data)
+    write_cache(args, data, 'geography.answer')
+    return data
 
 
 def load_difficulty(args, data_all):
-    if not path.exists(args.destination):
-        makedirs(args.destination)
-    if not path.exists(args.destination + '/difficulty.csv'):
-        difficulty = proso.geography.difficulty.prepare_difficulty(data_all)
-        proso.geography.difficulty.difficulty_to_csv(
-            difficulty, args.destination + '/difficulty.csv')
-    else:
-        difficulty = proso.geography.difficulty.csv_to_difficulty(
-            args.destination + '/difficulty.csv')
+    difficulty = read_cache(args, 'difficulty')
+    if difficulty is not None or data_all is None:
+        return proso.geography.difficulty.dataframe_to_difficulty(difficulty) if difficulty is not None else None
+    difficulty = proso.geography.difficulty.prepare_difficulty(data_all)
+    write_cache(args, proso.geography.difficulty.difficulty_to_dataframe(difficulty), 'difficulty')
     gc.collect()
     return difficulty
 
 
 def load_prior_skill(args, data_all, difficulty):
-    if not path.exists(args.destination):
-        makedirs(args.destination)
-    if not path.exists(args.destination + '/prior_skill.csv'):
-        prior_skill = proso.geography.user.prior_skill(data_all, difficulty)
-        proso.geography.user.prior_skill_to_csv(
-            prior_skill, args.destination + '/prior_skill.csv')
-    else:
-        prior_skill = proso.geography.user.csv_to_prior_skill(
-            args.destination + '/prior_skill.csv')
+    prior_skill = read_cache(args, 'prior_skill')
+    if data_all is None or difficulty is None or prior_skill is not None:
+        return proso.geography.user.dataframe_to_prior_skill(prior_skill) if prior_skill is not None else None
+    prior_skill = proso.geography.user.prior_skill(data_all, difficulty)
+    write_cache(args, proso.geography.prior_skill.prior_skill_to_dataframe(prior_skill), 'prior_skill')
     gc.collect()
     return prior_skill
 

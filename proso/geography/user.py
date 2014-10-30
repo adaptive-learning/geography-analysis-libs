@@ -57,35 +57,14 @@ def prior_skill(answers, difficulty):
     return dict(zip(list(ids), map(lambda x: predict_simple(x, 0)[0], list(skills))))
 
 
-def prior_skill_to_csv(prior_skill, filename):
-    '''
-    Save the given prior skill dictionary to the CSV file.
-
-    Args:
-        prior_skill (dict):
-            user's id -> prior skill
-        filename (str):
-            name of the file where the data is going to be stored
-    '''
-    pandas.DataFrame(prior_skill.items()).rename(
+def prior_skill_to_dataframe(prior_skill):
+    return pandas.DataFrame(prior_skill.items()).rename(
         columns={0: 'user', 1: 'prior_skill'}
-    ).to_csv(filename, index=False)
+    )
 
 
-def csv_to_prior_skill(filename):
-    '''
-    Load the prior skill dictionary from the given CSV file.
-
-    Args:
-        filename (str):
-            name of the file with the data
-    Returns:
-        dict: user's id-> prior skill
-    '''
-    return (pandas.
-        read_csv(filename).
-        set_index('user')['prior_skill'].
-        to_dict())
+def dataframe_to_prior_skill(dataframe):
+    return dataframe.set_index('user')['prior_skill'].to_dict()
 
 
 def answers_per_user(answers):
