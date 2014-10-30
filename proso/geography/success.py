@@ -1,4 +1,5 @@
 import decorator
+import numpy as np
 
 
 def success_per_user(answers):
@@ -50,8 +51,8 @@ def stay_on_rolling_success(answers, window_length=10):
         data = answers
     else:
         data = decorator.rolling_success(answers, window_length=window_length)
+    data = data[np.isfinite(data['rolling_success'])]
     return (data.
-        dropna().
         groupby(['user', 'rolling_success']).
         apply(lambda x: sum(~x['last_in_session']) / float(len(x))).
         reset_index().
