@@ -34,6 +34,11 @@ def parser_init(required=None):
         required=_is_required(required, '--answer-ab-values'),
         help='path to the CSV with answer ab values')
     parser.add_argument(
+        '--places',
+        metavar='FILE',
+        required=_is_required(required, '--places'),
+        help='path to the CSV with places')
+    parser.add_argument(
         '-d',
         '--destination',
         metavar='DIR',
@@ -73,6 +78,26 @@ def parser_init(required=None):
         type=str,
         default='hdf',
         choices=['csv', 'hdf'])
+    parser.add_argument(
+        '--map-code',
+        dest='map_code',
+        nargs='+',
+        type=str)
+    parser.add_argument(
+        '--map-type',
+        dest='map_type',
+        nargs='+',
+        type=str)
+    parser.add_argument(
+        '--place-asked-type',
+        dest='place_asked_type',
+        nargs='+',
+        type=str)
+    parser.add_argument(
+        '--drop-users',
+        dest='drop_users',
+        action='store_true',
+        help='when filtering the data drop users having invalid answers')
     return parser
 
 
@@ -80,30 +105,42 @@ def write_cache(args, dataframe, filename, force_storage=None):
     if not path.exists(args.destination):
         makedirs(args.destination)
     if args.storage == 'csv' and (force_storage is None or force_storage == 'csv'):
-        print 'writing CSV cache "%s"' % filename
+        print 'writing CSV cache "%s" (%s lines)' % (filename, len(dataframe))
         dataframe.to_csv('%s/%s.csv' % (args.destination, filename), index=False)
     else:
-        print 'writing HDF cache "%s"' % filename
+        print 'writing HDF cache "%s" (%s lines)' % (filename, len(dataframe))
         dataframe.to_hdf('%s/storage.hdf' % args.destination, filename.replace('.', '_'))
 
 
 def read_cache(args, filename, csv_parser=None):
     try:
         print 'trying to read HDF cache "%s"' % filename
-        return pandas.read_hdf('%s/storage.hdf' % args.destination, filename.replace('.', '_'))
+        result = pandas.read_hdf('%s/storage.hdf' % args.destination, filename.replace('.', '_'))
     except:
         print 'failed to read HDF cache "%s"' % filename
-        print 'trying to read CSV cache "%s"' % filename
-        if csv_parser:
-            data = csv_parser('%s/%s.csv' % (args.destination, filename))
-        else:
-            data = pandas.read_csv('%s/%s.csv' % (args.destination, filename), index_col=False)
-        write_cache(args, data, filename, force_storage='hdf')
-        return data
+        try:
+            print 'trying to read CSV cache "%s"' % filename
+            if csv_parser:
+                result = csv_parser('%s/%s.csv' % (args.destination, filename))
+            else:
+                result = pandas.read_csv('%s/%s.csv' % (args.destination, filename), index_col=False)
+            write_cache(args, result, filename, force_storage='hdf')
+        except:
+            print 'failed to read CSV cache "%s"' % filename
+            return None
+    print '%s lines loaded' % len(result)
+    return result
 
 
 def data_hash(args):
-    return 'apu_%s__dcs_%s__dts_%s' % (args.answers_per_user, args.drop_classrooms, args.drop_tests)
+    return 'apu_%s__dcs_%s__dts_%s__mc_%s__pat_%s__mt_%s__du_%s' % (
+        args.answers_per_user,
+        args.drop_classrooms,
+        args.drop_tests,
+        args.map_code,
+        args.place_asked_type,
+        args.map_type,
+        args.drop_users)
 
 
 def parser_group(parser, groups):
@@ -135,6 +172,17 @@ def load_answers(args):
     if data is not None:
         return data, data_all
     data = data_all
+    if args.map_code:
+        data = answer.apply_filter(data, lambda x: x['place_map_code'] in args.map_code, drop_users=args.drop_users)
+    if args.map_type:
+        data = answer.apply_filter(data, lambda x: x['place_map_type'] in args.map_type, drop_users=args.drop_users)
+    if args.place_asked_type:
+        data = answer.apply_filter(data, lambda x: x['place_asked_type'] in args.place_asked_type, drop_users=args.drop_users)
+    if args.map_code or args.place_asked_type or args.map_type:
+        del data['rolling_success']
+        del data['last_in_session']
+        del data['session_number']
+        data = decorator_optimization(data)
     if args.drop_tests:
         data = answer.apply_filter(data, lambda x: np.isnan(x['test_id']))
     if args.drop_classrooms:
@@ -153,6 +201,7 @@ def load_answers_all(args):
     options_file = args.options if args.options else args.data_dir + '/geography.answer_options.csv'
     ab_values_file = args.ab_values if args.ab_values else args.data_dir + '/geography.ab_value.csv'
     answer_ab_values_file = args.answer_ab_values if args.answer_ab_values else args.data_dir + '/geography.answer_ab_values.csv'
+    place_file = args.places if args.places else args.data_dir + '/geography.place.csv'
     if not path.exists(options_file):
         options_file = None
     if not path.exists(ab_values_file):
@@ -164,6 +213,7 @@ def load_answers_all(args):
         answer_options_csv=options_file,
         answer_ab_values_csv=answer_ab_values_file,
         ab_value_csv=ab_values_file,
+        place_csv=place_file,
         should_sort=False)
     data = decorator_optimization(data)
     write_cache(args, data, 'geography.answer')
