@@ -73,18 +73,18 @@ def plot_user_ratio(figure, answers, group_column, group_name_mapping=None, answ
                     session_number=num)
                 to_plot.append(filtered_users / float(all_users))
                 anns.append('{}/{}'.format(filtered_users, all_users))
-                current_labels.append(str(num) + ' sessions')
+                current_labels.append(str(num + 1) + ' sessions')
         labels = current_labels
         to_plots.append(to_plot)
         annss.append(anns)
         group_names.append(group_name_mapping[group_name] if group_name_mapping else group_name)
 
+    group_names, to_plots, annss = zip(*sorted(zip(group_names, to_plots, annss)))
     to_plots = map(list, zip(*to_plots))
     annss = map(list, zip(*annss))
     ax.set_xlabel(group_column)
     ax.set_ylabel('Ratio of Users')
     for to_plot, label, anns in zip(to_plots, labels, annss):
-        group_names, to_plot, annss = zip(*sorted(zip(group_names, to_plot, anns)))
         ax.plot(group_names, to_plot, label=label)
         for g, v, ann in zip(group_names, to_plot, anns):
             ax.annotate(ann, (g, v))

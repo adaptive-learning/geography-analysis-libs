@@ -6,6 +6,7 @@ import proso.geography.difficulty
 import gc
 import numpy as np
 import pandas
+import sys
 
 
 def parser_init(required=None):
@@ -137,9 +138,9 @@ def data_hash(args):
         args.answers_per_user,
         args.drop_classrooms,
         args.drop_tests,
-        args.map_code,
-        args.place_asked_type,
-        args.map_type,
+        'x'.join(args.map_code if args.map_code else []),
+        'x'.join(args.place_asked_type if args.place_asked_type else []),
+        'x'.join(args.map_type if args.map_type else []),
         args.drop_users)
 
 
@@ -159,6 +160,9 @@ def parser_group(parser, groups):
 
 
 def decorator_optimization(answers):
+    if len(answers) == 0:
+        print "There are no answers to analyze"
+        sys.exit()
     decorated = decorator.rolling_success(
         decorator.last_in_session(
             decorator.session_number(answers)))
@@ -240,10 +244,15 @@ def load_prior_skill(args, data_all, difficulty):
     return prior_skill
 
 
-def savefig(args, figure, name):
-    if not path.exists(args.destination):
-        makedirs(args.destination)
-    figure.savefig(args.destination + '/' + name + '.' + args.output, bbox_inches='tight')
+def get_destination(args, prefix=''):
+    dest_file = args.destination + '/' + prefix + data_hash(args)
+    if not path.exists(dest_file):
+        makedirs(dest_file)
+    return dest_file
+
+
+def savefig(args, figure, name, prefix=''):
+    figure.savefig(get_destination(args, prefix) + '/' + name + '.' + args.output, bbox_inches='tight')
 
 
 def is_group(args, group):
