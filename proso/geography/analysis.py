@@ -51,7 +51,7 @@ def parser_init(required=None):
         '--output',
         metavar='EXT',
         dest='output',
-        default='svg',
+        default='png',
         help='extension for the output fles')
     parser.add_argument(
         '--drop-classrooms',
