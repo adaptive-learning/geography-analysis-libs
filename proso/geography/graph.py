@@ -8,6 +8,18 @@ import scipy.stats
 import math
 
 
+def plot_maps_success_vs_number_of_answers(figure, answers):
+    groups = answers.groupby(['place_map_code', 'place_asked_type']).apply(lambda d: (sum(d['place_asked'] == d['place_answered']), len(d))).to_dict()
+    ax = figure.add_subplot(111)
+    for (map_code, place_type), (correct, number) in groups.iteritems():
+        success = float(correct) / number
+        ax.plot(number, success, 'o', color='black')
+        ax.annotate("%s: %s" % (map_code, place_type), (number, success))
+    ax.set_xlabel("Total Number of Answers")
+    ax.set_xscale('log')
+    ax.set_ylabel("Success")
+
+
 def plot_answers_vs_prior_skill(figure, answers, prior_skill):
     answers = decorator.session_number(answers)
     ax = figure.add_subplot(111)
