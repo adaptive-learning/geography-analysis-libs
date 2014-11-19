@@ -239,7 +239,7 @@ def load_prior_skill(args, data_all, difficulty):
     if data_all is None or difficulty is None or prior_skill is not None:
         return proso.geography.user.dataframe_to_prior_skill(prior_skill) if prior_skill is not None else None
     prior_skill = proso.geography.user.prior_skill(data_all, difficulty)
-    write_cache(args, proso.geography.prior_skill.prior_skill_to_dataframe(prior_skill), 'prior_skill')
+    write_cache(args, proso.geography.user.prior_skill_to_dataframe(prior_skill), 'prior_skill')
     gc.collect()
     return prior_skill
 
