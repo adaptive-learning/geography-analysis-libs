@@ -16,7 +16,7 @@ def dataframe_to_difficulty(dataframe):
     return dataframe.set_index('place')['difficulty'].to_dict()
 
 
-def prepare_difficulty_and_prior_skill(answers):
+def prepare_difficulty_and_prior_skill(answers, difficulty=None):
     '''
     Compute the difficulty for places.
 
@@ -27,7 +27,10 @@ def prepare_difficulty_and_prior_skill(answers):
         dict: place -> difficulty, user's id -> prior skill
     '''
     first = first_answers(answers, ['user']).sort('id').sort('id')
-    env = InMemoryEnvironment()
+    if difficulty:
+        env = PreserveDifficultyEnvironment(difficulty)
+    else:
+        env = InMemoryEnvironment()
     stream = DefaultAnswerStream(env)
     for a in iterdicts(first):
         stream.stream_answer(a)

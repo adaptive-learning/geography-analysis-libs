@@ -10,10 +10,14 @@ def main():
     parser = analysis.parser_group(parser,
         ['time', 'session', 'recommendation', 'knowledge', 'motivation'])
     args = parser.parse_args()
-    data, data_all = analysis.load_answers(args)
+    data, data_all = analysis.load_answers(args, all_needed=False)
     print 'Answers loaded'
     if analysis.is_any_group(args, ['recommendation', 'knowledge', 'motivation']):
         difficulty, prior_skill = analysis.load_difficulty_and_prior_skill(args, data_all)
+        if difficulty is None:
+            data, data_all = analysis.load_answers(args, all_needed=True)
+            print 'Answers loaded (again)'
+            difficulty, prior_skill = analysis.load_difficulty_and_prior_skill(args, data_all)
         print 'Difficulty loaded'
     data_all = None
     if analysis.is_group(args, 'time'):

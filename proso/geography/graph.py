@@ -27,7 +27,7 @@ def plot_first_session_vs_total(figure, answers):
     total = user.answers_per_user(answers)
     total_first = user.answers_per_user(answers[answers['session_number'] == 0])
     users = answers['user'].unique()
-    vals = lambda x: [x[i] for i in users]
+    vals = lambda x: [x.get(i, 0) for i in users]
     total_first, total = zip(*sorted(zip(vals(total_first), vals(total))))
     ax.plot(total_first, total, 'o', alpha=0.3, linewidth=0, color='black')
     ax.set_xlabel('number of answers in the first session')
@@ -42,7 +42,7 @@ def plot_first_session_vs_session_number(figure, answers):
     ses = user.session_per_user(answers)
     total_first = user.answers_per_user(answers[answers['session_number'] == 0])
     users = answers['user'].unique()
-    vals = lambda x: [x[i] for i in users]
+    vals = lambda x: [x.get(i, 0) for i in users]
     total_first, ses = zip(*sorted(zip(vals(total_first), vals(ses))))
     ax.plot(total_first, ses, 'o', alpha=0.3, linewidth=0, color='black')
     ax.set_xlabel('number of answers in the first session')

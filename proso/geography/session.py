@@ -2,6 +2,7 @@ import decorator
 import user
 import numpy as np
 import proso.geography.answers
+import difficulty
 
 
 def session_user_portion(answers):
@@ -54,7 +55,7 @@ def session_length(answers):
         to_dict())
 
 
-def session_prior_skill_diffs(answers, difficulty, session_number_first, session_number_second):
+def session_prior_skill_diffs(answers, difficulty_data, session_number_first, session_number_second):
     '''
     Compute prior skills for the given session numbers independently and return differences.
     The prior skill is computed only for the places answered in both sessions.
@@ -64,7 +65,7 @@ def session_prior_skill_diffs(answers, difficulty, session_number_first, session
         answers (pandas.DataFrame):
             data frame containing answer data, if it is not decorated by 'session_number',
             it will be decorated
-        difficulty (dict):
+        difficulty_data (dict):
             place -> difficulty
         session_number_first (int)
         session_number_second (int)
@@ -77,7 +78,7 @@ def session_prior_skill_diffs(answers, difficulty, session_number_first, session
         data = decorator.session_number(answers)
     return (data.
         groupby('user').
-        apply(lambda x: _session_prior_skill_diff_for_user(x, difficulty, session_number_first, session_number_second)).
+        apply(lambda x: _session_prior_skill_diff_for_user(x, difficulty_data, session_number_first, session_number_second)).
         dropna().values)
 
 
@@ -106,7 +107,7 @@ def session_success_diffs(answers, session_number_first, session_number_second):
         dropna().values)
 
 
-def session_prior_skill(answers, difficulty):
+def session_prior_skill(answers, difficulty_data):
     '''
     Compute average prior skill for each session.
 
@@ -114,7 +115,7 @@ def session_prior_skill(answers, difficulty):
         answers (pandas.DataFrame):
             data frame containing answer data, if it is not decorated by 'session_number',
             it will be decorated
-        difficulty (dict):
+        difficulty_data (dict):
             place -> difficulty
     Return:
         dict: session number -> prior skill
@@ -125,7 +126,7 @@ def session_prior_skill(answers, difficulty):
         data = decorator.session_number(answers)
     return (data.
         groupby('session_number').
-        apply(lambda x: np.mean(user.prior_skill(x, difficulty).values())).
+        apply(lambda x: np.mean(difficulty.prepare_difficulty_and_prior_skill(x, difficulty_data)[1].values())).
         to_dict())
 
 
