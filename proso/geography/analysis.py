@@ -124,8 +124,9 @@ def write_cache(args, dataframe, filename, force_storage=None):
     if not path.exists(args.destination):
         makedirs(args.destination)
     if args.storage == 'csv' and (force_storage is None or force_storage == 'csv'):
-        print 'writing CSV cache "%s" (%s lines)' % (filename, len(dataframe))
-        dataframe.to_csv('%s/%s.csv' % (args.destination, filename), index=False)
+        if not path.exists('%s/%s.csv' % (args.destination, filename)):
+            print 'writing CSV cache "%s" (%s lines)' % (filename, len(dataframe))
+            dataframe.to_csv('%s/%s.csv' % (args.destination, filename), index=False)
     else:
         print 'writing HDF cache "%s" (%s lines)' % (filename, len(dataframe))
         dataframe.to_hdf('%s/storage.hdf' % args.destination, filename.replace('.', '_'))
@@ -135,6 +136,8 @@ def read_cache(args, filename, csv_parser=None):
     try:
         print 'trying to read HDF cache "%s"' % filename
         result = pandas.read_hdf('%s/storage.hdf' % args.destination, filename.replace('.', '_'))
+        if args.storage == 'csv':
+            write_cache(args, result, filename)
     except:
         print 'failed to read HDF cache "%s"' % filename
         try:
@@ -248,24 +251,19 @@ def load_answers_all(args):
     return data
 
 
-def load_difficulty(args, data_all):
+def load_difficulty_and_prior_skill(args, data_all):
     difficulty = read_cache(args, 'difficulty')
-    if difficulty is not None or data_all is None:
-        return proso.geography.difficulty.dataframe_to_difficulty(difficulty) if difficulty is not None else None
-    difficulty = proso.geography.difficulty.prepare_difficulty(data_all)
-    write_cache(args, proso.geography.difficulty.difficulty_to_dataframe(difficulty), 'difficulty')
-    gc.collect()
-    return difficulty
-
-
-def load_prior_skill(args, data_all, difficulty):
     prior_skill = read_cache(args, 'prior_skill')
-    if data_all is None or difficulty is None or prior_skill is not None:
-        return proso.geography.user.dataframe_to_prior_skill(prior_skill) if prior_skill is not None else None
-    prior_skill = proso.geography.user.prior_skill(data_all, difficulty)
+    if difficulty is not None or data_all is None:
+        return (
+            proso.geography.difficulty.dataframe_to_difficulty(difficulty) if difficulty is not None else None,
+            proso.geography.user.dataframe_to_prior_skill(prior_skill) if prior_skill is not None else None
+        )
+    difficulty, prior_skill = proso.geography.difficulty.prepare_difficulty_and_prior_skill(data_all)
+    write_cache(args, proso.geography.difficulty.difficulty_to_dataframe(difficulty), 'difficulty')
     write_cache(args, proso.geography.user.prior_skill_to_dataframe(prior_skill), 'prior_skill')
     gc.collect()
-    return prior_skill
+    return difficulty, prior_skill
 
 
 def get_destination(args, prefix=''):

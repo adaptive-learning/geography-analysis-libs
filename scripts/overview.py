@@ -13,11 +13,8 @@ def main():
     data, data_all = analysis.load_answers(args)
     print 'Answers loaded'
     if analysis.is_any_group(args, ['recommendation', 'knowledge', 'motivation']):
-        difficulty = analysis.load_difficulty(args, data_all)
+        difficulty, prior_skill = analysis.load_difficulty_and_prior_skill(args, data_all)
         print 'Difficulty loaded'
-    if analysis.is_any_group(args, ['recommendation', 'motivation']):
-        prior_skill = analysis.load_prior_skill(args, data_all, difficulty)
-        print 'Prior skill loaded'
     data_all = None
     if analysis.is_group(args, 'time'):
         fig = plt.figure()

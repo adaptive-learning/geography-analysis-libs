@@ -1,7 +1,3 @@
-from difficulty import DefaultAnswerStream, PreserveDifficultyEnvironment
-from proso.geography.answers import first_answers
-from proso.geography.dfutil import iterdicts
-from proso.geography.model import predict_simple
 import decorator
 import pandas
 
@@ -33,28 +29,6 @@ def user_ratio(answers, session_number=None, answer_number_min=None, answer_numb
             return answer_number_max >= len(data)
         return True
     return sum(answers.groupby('user').apply(user_ratio_filter)), answers['user'].nunique()
-
-
-def prior_skill(answers, difficulty):
-    '''
-    Assuming the given difficulty of places compute the prior skill for users.
-
-    Args:
-        answers (pandas.DataFrame):
-            data frame containing answer data
-        difficulty (dict):
-            place -> difficulty
-    Returns:
-        dict: user's id -> prior skill
-    '''
-    first = first_answers(answers, ['user']).sort('id')
-    env = PreserveDifficultyEnvironment(difficulty)
-    stream = DefaultAnswerStream(env)
-    for a in iterdicts(first):
-        stream.stream_answer(a)
-    skill_items = env.export_prior_skill().items()
-    ids, skills = zip(*skill_items)
-    return dict(zip(list(ids), map(lambda x: predict_simple(x, 0)[0], list(skills))))
 
 
 def prior_skill_to_dataframe(prior_skill):
