@@ -7,6 +7,7 @@ import gc
 import numpy as np
 import pandas
 import sys
+from datetime import datetime
 
 
 def parser_init(required=None):
@@ -99,7 +100,24 @@ def parser_init(required=None):
         dest='drop_users',
         action='store_true',
         help='when filtering the data drop users having invalid answers')
+    parser.add_argument(
+        '--min-date',
+        dest='min_date',
+        type=date_limit,
+        help='date lower bound for which the data is taken')
+    parser.add_argument(
+        '--max-date',
+        dest='max_date',
+        type=date_limit,
+        help='date lower bound for which the data is taken')
     return parser
+
+
+def date_limit(value):
+    if len(value) == 10:
+        return datetime.strptime(value, '%Y-%m-%d')
+    else:
+        return datetime.strptime(value, '%Y-%m-%d_%H:%M:%S')
 
 
 def write_cache(args, dataframe, filename, force_storage=None):
@@ -134,14 +152,16 @@ def read_cache(args, filename, csv_parser=None):
 
 
 def data_hash(args):
-    return 'apu_%s__dcs_%s__dts_%s__mc_%s__pat_%s__mt_%s__du_%s' % (
+    return 'apu_%s__dcs_%s__dts_%s__mc_%s__pat_%s__mt_%s__du_%s__mind_%s__maxd_%s' % (
         args.answers_per_user,
         args.drop_classrooms,
         args.drop_tests,
         'x'.join(args.map_code if args.map_code else []),
         'x'.join(args.place_asked_type if args.place_asked_type else []),
         'x'.join(args.map_type if args.map_type else []),
-        args.drop_users)
+        args.drop_users,
+        args.min_date,
+        args.max_date)
 
 
 def parser_group(parser, groups):
@@ -193,6 +213,10 @@ def load_answers(args):
         data = answer.drop_classrooms(data)
     if args.answers_per_user:
         data = answer.drop_users_by_answers(data, answer_limit_min=args.answers_per_user)
+    if args.min_date:
+        data = answer.apply_filter(data, lambda d: d['inserted'] >= args.min_date, drop_users=args.drop_users)
+    if args.max_date:
+        data = answer.apply_filter(data, lambda d: d['inserted'] <= args.max_date, drop_users=args.drop_users)
     write_cache(args, data, filename)
     return data, data_all
 
