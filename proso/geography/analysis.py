@@ -192,12 +192,16 @@ def decorator_optimization(answers):
     return decorated
 
 
-def load_answers(args):
+def load_answers(args, all_needed=True):
     filename = 'geography.answer_%s' % data_hash(args)
-    data_all = load_answers_all(args)
+    data_all = None
+    if all_needed:
+        data_all = load_answers_all(args)
     data = read_cache(args, filename, csv_parser=answer.from_csv)
     if data is not None:
         return data, data_all
+    elif not all_needed:
+        data_all = load_answers_all(args)
     data = data_all
     if args.map_code:
         data = answer.apply_filter(data, lambda x: x['place_map_code'] in args.map_code, drop_users=args.drop_users)

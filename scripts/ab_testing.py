@@ -28,7 +28,7 @@ def load_answers_to_ab_testing(args):
     data = analysis.read_cache(args, filename, csv_parser=answer.from_csv)
     if data is not None:
         return data
-    data, _ = analysis.load_answers(args)
+    data, _ = analysis.load_answers(args, all_needed=False)
     data = abtesting.prepare_data(data, args.interested_prefixes)
     analysis.write_cache(args, data, filename)
     return data
