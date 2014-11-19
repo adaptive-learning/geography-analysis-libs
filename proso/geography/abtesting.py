@@ -15,7 +15,7 @@ def prepare_data(data, group_prefixes):
 
     def valid_ab_values(ab_values):
         return (
-            len([v for v in ab_values if any([v.startswith(p) for p in group_prefixes])])
+            len(decorator.filter_ab_values_by_prefix(ab_values, group_prefixes))
             ==
             len(group_prefixes)
         )

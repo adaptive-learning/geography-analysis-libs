@@ -6,16 +6,23 @@ def interested_ab_values(answers, group_prefixes, override=False):
     if not override and 'interested_ab_values' in answers:
         return answers
 
-    def filter_by_prefix(ab_values):
-        return [
-            v for v in ab_values
-            if any([v.startswith(p) for p in group_prefixes])
-        ]
     answers['interested_ab_values'] = (
         answers['ab_values'].
-        apply(lambda values: '__'.join(sorted(filter_by_prefix(values))))
+        apply(lambda values: '__'.join(sorted(filter_ab_values_by_prefix(values, group_prefixes))))
     )
     return answers
+
+
+def filter_ab_values_by_prefix(values, prefixes):
+    def _valid_value(value):
+        for prefix in prefixes:
+            if prefix == 'recommendation_target_prob_':
+                if value.startswith(prefix) and not value.startswith('recommendation_target_prob_adjustment_'):
+                    return True
+            elif value.startswith(prefix):
+                return True
+        return False
+    return filter(_valid_value, values)
 
 
 def ab_group(answers, group_prefixes, override=False):
