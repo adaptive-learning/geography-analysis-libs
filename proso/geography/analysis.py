@@ -163,7 +163,7 @@ def read_cache(args, filename, csv_parser=None):
 
 
 def data_hash(args):
-    return 'apu_%s__dcs_%s__dts_%s__mc_%s__pat_%s__mt_%s__du_%s__mind_%s__maxd_%s' % (
+    return ('apu_%s__dcs_%s__dts_%s__mc_%s__pat_%s__mt_%s__du_%s__mind_%s__maxd_%s' % (
         args.answers_per_user,
         args.drop_classrooms,
         args.drop_tests,
@@ -172,7 +172,7 @@ def data_hash(args):
         'x'.join(args.map_type if args.map_type else []),
         args.drop_users,
         args.min_date,
-        args.max_date)
+        args.max_date)).replace(' ', '_')
 
 
 def parser_group(parser, groups):
