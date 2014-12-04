@@ -6,7 +6,7 @@ import scipy.stats
 
 
 def answers_per_user(output, answers, group_column, group_name_mapping=None):
-    _header(output, "Answers per User")
+    _header(output, "Answers per User: %s" % group_column)
 
     table = PrettyTable([
         'Group', 'Size', 'Mean', "Std.", "Log Mean", 'Median', '25 Perc.', '75 Perc.', 'Mean Success'])
@@ -28,7 +28,7 @@ def answers_per_user(output, answers, group_column, group_name_mapping=None):
 
 
 def answers_per_user_pvalues(output, answers, group_column, group_name_mapping=None):
-    _header(output, "Answers per User - P Values (log)")
+    _header(output, "Answers per User - P Values (log): %s" % group_column)
     numbers = {}
     for group_name, group_data in answers.groupby(group_column):
         g_name = group_name if group_name_mapping is None else group_name_mapping[group_name]
