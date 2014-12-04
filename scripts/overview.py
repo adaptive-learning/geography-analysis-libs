@@ -12,7 +12,7 @@ def main():
     args = parser.parse_args()
     data, data_all = analysis.load_answers(args, all_needed=False)
     print 'Answers loaded'
-    if analysis.is_any_group(args, ['recommendation', 'knowledge', 'motivation']):
+    if analysis.is_any_group(args, ['recommendation', 'knowledge']):
         difficulty, prior_skill = analysis.load_difficulty_and_prior_skill(args, data_all)
         if difficulty is None:
             data, data_all = analysis.load_answers(args, all_needed=True)
@@ -67,15 +67,9 @@ def main():
         fig = plt.figure()
         graph.plot_maps_success_vs_number_of_answers(fig, data)
         analysis.savefig(args, fig, 'success_vs_number_of_answers')
-#        fig = plt.figure()
-#        graph.plot_first_session_vs_total(fig, data)
-#        analysis.savefig(args, fig, 'first_session_vs_total')
-#        fig = plt.figure()
-#        graph.plot_first_session_vs_session_number(fig, data)
-#        analysis.savefig(args, fig, 'first_session_vs_session')
-#        fig = plt.figure()
-#        graph.plot_answers_vs_prior_skill(fig, data, prior_skill)
-#        analysis.savefig(args, fig, 'answers_vs_prior_skill')
+        fig = plt.figure()
+        graph.plot_first_session_vs_total(fig, data)
+        analysis.savefig(args, fig, 'first_session_vs_total')
         print "Group [motivation] processed"
         gc.collect()
     else:
