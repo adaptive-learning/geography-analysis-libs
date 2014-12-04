@@ -8,6 +8,7 @@ import numpy as np
 import pandas
 import sys
 from datetime import datetime
+import matplotlib.pyplot as plt
 
 
 def parser_init(required=None):
@@ -79,7 +80,7 @@ def parser_init(required=None):
         '--storage',
         type=str,
         default='hdf',
-        choices=['csv', 'hdf'])
+        choices=['csv', 'hdf', 'pkl'])
     parser.add_argument(
         '--map-code',
         dest='map_code',
@@ -123,10 +124,14 @@ def date_limit(value):
 def write_cache(args, dataframe, filename, force_storage=None):
     if not path.exists(args.destination):
         makedirs(args.destination)
-    if args.storage == 'csv' and (force_storage is None or force_storage == 'csv'):
+    if args.storage == 'csv' or force_storage == 'csv':
         if not path.exists('%s/%s.csv' % (args.destination, filename)):
             print 'writing CSV cache "%s" (%s lines)' % (filename, len(dataframe))
             dataframe.to_csv('%s/%s.csv' % (args.destination, filename), index=False)
+    elif args.storage == 'pkl' or force_storage == 'pkl':
+        if not path.exists('%s/%s.pkl' % (args.destination, filename)):
+            print 'writing PICKLE cache "%s" (%s lines)' % (filename, len(dataframe))
+            dataframe.to_pickle('%s/%s.pkl' % (args.destination, filename))
     else:
         print 'writing HDF cache "%s" (%s lines)' % (filename, len(dataframe))
         dataframe.to_hdf('%s/storage.hdf' % args.destination, filename.replace('.', '_'))
@@ -136,20 +141,23 @@ def read_cache(args, filename, csv_parser=None):
     try:
         print 'trying to read HDF cache "%s"' % filename
         result = pandas.read_hdf('%s/storage.hdf' % args.destination, filename.replace('.', '_'))
-        if args.storage == 'csv':
-            write_cache(args, result, filename)
     except:
         print 'failed to read HDF cache "%s"' % filename
         try:
-            print 'trying to read CSV cache "%s"' % filename
-            if csv_parser:
-                result = csv_parser('%s/%s.csv' % (args.destination, filename))
-            else:
-                result = pandas.read_csv('%s/%s.csv' % (args.destination, filename), index_col=False)
-            write_cache(args, result, filename, force_storage='hdf')
+            print 'trying to read PICKLE cache "%s"' % filename
+            result = pandas.read_pickle('%s/%s.pkl' % (args.destination, filename))
         except:
-            print 'failed to read CSV cache "%s"' % filename
-            return None
+            print 'failed to read PICKLE cache "%s"' % filename
+            try:
+                print 'trying to read CSV cache "%s"' % filename
+                if csv_parser:
+                    result = csv_parser('%s/%s.csv' % (args.destination, filename))
+                else:
+                    result = pandas.read_csv('%s/%s.csv' % (args.destination, filename), index_col=False)
+                write_cache(args, result, filename, force_storage='pkl')
+            except:
+                print 'failed to read CSV cache "%s"' % filename
+                return None
     print '%s lines loaded' % len(result)
     return result
 
@@ -278,7 +286,10 @@ def get_destination(args, prefix=''):
 
 
 def savefig(args, figure, name, prefix=''):
-    figure.savefig(get_destination(args, prefix) + '/' + name + '.' + args.output, bbox_inches='tight')
+    filename = get_destination(args, prefix) + '/' + name + '.' + args.output
+    figure.savefig(filename, bbox_inches='tight')
+    print "Saving", filename
+    plt.close(figure)
 
 
 def is_group(args, group):
