@@ -23,13 +23,9 @@ def plot_feedback(figure, answers, feedback, group_column, group_name_mapping=No
         medium.append(ratios.get(2, 0))
         hard.append(ratios.get(3, 0))
         group_names.append(group_name_mapping[group_name] if group_name_mapping else group_name)
-    group_names, easy, medium, hard = zip(*sorted(zip(group_names, easy, medium, hard)))
+    _plot(ax, group_names, ['Easy', 'Medium', 'Hard'], easy, medium, hard)
     ax.set_xlabel(group_column)
     ax.set_ylabel('Feedback Ratio')
-    ax.plot(group_names, easy, label='Easy')
-    ax.plot(group_names, medium, label='Medium')
-    ax.plot(group_names, hard, label='Hard')
-    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
 
 def plot_maps_success_vs_number_of_answers(figure, answers):
@@ -91,7 +87,6 @@ def plot_user_ratio(figure, answers, group_column, group_name_mapping=None, answ
     ax = figure.add_subplot(111)
     group_names = []
     to_plots = []
-    annss = []
     labels = None
     for group_name, group_data in answers.groupby(group_column):
         to_plot = []
@@ -109,23 +104,14 @@ def plot_user_ratio(figure, answers, group_column, group_name_mapping=None, answ
                     group_data,
                     session_number=num)
                 to_plot.append(filtered_users / float(all_users))
-                anns.append('{}/{}'.format(filtered_users, all_users))
                 current_labels.append(str(num + 1) + ' sessions')
         labels = current_labels
         to_plots.append(to_plot)
-        annss.append(anns)
         group_names.append(group_name_mapping[group_name] if group_name_mapping else group_name)
-
-    group_names, to_plots, annss = zip(*sorted(zip(group_names, to_plots, annss)))
     to_plots = map(list, zip(*to_plots))
-    annss = map(list, zip(*annss))
+    _plot(ax, group_names, labels, *to_plots)
     ax.set_xlabel(group_column)
     ax.set_ylabel('Ratio of Users')
-    for to_plot, label, anns in zip(to_plots, labels, annss):
-        ax.plot(group_names, to_plot, label=str(label))
-        for g, v, ann in zip(group_names, to_plot, anns):
-            ax.annotate(ann, (g, v))
-    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
 
 def boxplot_time_gap(figure, answers, group_column, group_name_mapping=None):
@@ -478,6 +464,20 @@ def plot_success_per_week(figure, answers):
     ax.plot(xs, zip(*by_user)[1], 'r-v', label='mean success rate by user')
     ax.set_xlabel('week from project start')
     ax.set_ylabel('success rate')
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+
+
+def _plot(ax, labels, data_labels, *args):
+    if data_labels is None:
+        data_labels = [None for i in args]
+    zipped = zip(*sorted(zip(labels, *args)))
+    xs = range(len(labels))
+    ax.set_xticks(xs)
+    for i in range(1, len(zipped)):
+        ax.plot(xs, zipped[i], '-o', label=data_labels[i - 1])
+    ax.set_xticklabels(labels)
+    for label in ax.get_xticklabels():
+        label.set_rotation(10)
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
 

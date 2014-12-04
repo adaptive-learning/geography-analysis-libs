@@ -93,7 +93,7 @@ def map_graphs(args, data, feedback, mapping, prefix, filename_prefix, group_col
     else:
         print "Group [motivation] skipped"
 
-    if analysis.is_group(args, 'progress') and (mapping is None or all(map(lambda x: not isinstance(x, str) or x.isdigit(), mapping.values()))):
+    if analysis.is_group(args, 'progress'):
         fig = plt.figure()
         graph.plot_user_ratio(fig, data, group_column, mapping, session_numbers=[1, 2])
         fig.suptitle('AB testing: Users with at least the given number of sessions')
