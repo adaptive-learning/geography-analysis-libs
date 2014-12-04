@@ -1,8 +1,5 @@
-from os import path
-import sys
 import matplotlib.pyplot as plt
 import proso.geography.graph as graph
-import proso.geography.user as user
 import proso.geography.analysis as analysis
 import proso.geography.answers as answer
 import proso.geography.decorator as decorator
