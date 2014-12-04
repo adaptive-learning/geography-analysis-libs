@@ -215,9 +215,19 @@ def load_answers(args, all_needed=True):
     data = read_cache(args, filename, csv_parser=answer.from_csv)
     if data is not None:
         return data, data_all
+    time_filename = 'geography.answer__mind_%s__maxd_%s__du_%s' % (args.min_date, args.max_date, args.drop_users)
+    data = read_cache(args, time_filename, csv_parser=answer.from_csv)
+    if data is not None:
+        return data, data_all
     elif not all_needed:
         data_all = load_answers_all(args)
     data = data_all
+    if args.min_date:
+        data = answer.apply_filter(data, lambda d: d['inserted'] >= args.min_date, drop_users=args.drop_users)
+    if args.max_date:
+        data = answer.apply_filter(data, lambda d: d['inserted'] <= args.max_date, drop_users=args.drop_users)
+    if args.min_date or args.max_date:
+        write_cache(args, data, time_filename)
     if args.map_code:
         data = answer.apply_filter(data, lambda x: x['place_map_code'] in args.map_code, drop_users=args.drop_users)
     if args.map_type:
@@ -235,10 +245,6 @@ def load_answers(args, all_needed=True):
         data = answer.drop_classrooms(data)
     if args.answers_per_user:
         data = answer.drop_users_by_answers(data, answer_limit_min=args.answers_per_user)
-    if args.min_date:
-        data = answer.apply_filter(data, lambda d: d['inserted'] >= args.min_date, drop_users=args.drop_users)
-    if args.max_date:
-        data = answer.apply_filter(data, lambda d: d['inserted'] <= args.max_date, drop_users=args.drop_users)
     write_cache(args, data, filename)
     return data, data_all
 
