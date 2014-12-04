@@ -6,6 +6,7 @@ import success
 import numpy
 import scipy.stats
 import math
+import matplotlib.pyplot as plt
 
 
 def plot_maps_success_vs_number_of_answers(figure, answers):
@@ -40,7 +41,8 @@ def plot_first_session_vs_total(figure, answers):
     total_first = user.answers_per_user(answers[answers['session_number'] == 0])
     users = answers['user'].unique()
     vals = lambda x: [x.get(i, 0) for i in users]
-    total_first, total = zip(*sorted(zip(vals(total_first), vals(total))))
+    pairs = map(lambda (x, y): (x, y - x), sorted(zip(vals(total_first), vals(total))))
+    total_first, total = zip(*pairs)
     ax.plot(total_first, total, 'o', alpha=0.3, linewidth=0, color='black')
     ax.set_xlabel('number of answers in the first session')
     ax.set_ylabel('number of answer at all')
@@ -97,7 +99,7 @@ def plot_user_ratio(figure, answers, group_column, group_name_mapping=None, answ
     ax.set_xlabel(group_column)
     ax.set_ylabel('Ratio of Users')
     for to_plot, label, anns in zip(to_plots, labels, annss):
-        ax.plot(group_names, to_plot, label=label)
+        ax.plot(group_names, to_plot, label=str(label))
         for g, v, ann in zip(group_names, to_plot, anns):
             ax.annotate(ann, (g, v))
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
@@ -165,7 +167,7 @@ def boxplot_answers_per_user(figure, answers, group_column, group_name_mapping=N
         labels.append(
             str(group_name_mapping[group_name] if group_name_mapping else group_name) + '\n(' + str(len(number)) + ')')
     ax.set_yscale('log')
-    ax.set_xlabel(group_column)
+    ax.set_xlabel(group_name_mapping.get(group_column, group_column) if group_name_mapping else group_column)
     ax.set_ylabel('number of answers')
     _boxplot(ax, to_plot, labels)
     figure.tight_layout()
@@ -228,7 +230,7 @@ def hist_answers_per_user(figure, answers, group_column, group_name_mapping=None
         group_names = [group_name_mapping[group_name] for group_name in group_names]
     else:
         group_names = map(str, group_names)
-    group_names, to_plots = zip(*sorted(zip(group_names, to_plots)))
+    group_names, to_plots = zip(*sorted(zip(group_names, to_plots), key=lambda x: x[0]))
     ax.hist(
         to_plots,
         label=[group_name + ' (' + str(len(to_plot)) + ')' for group_name, to_plot in zip(group_names, to_plots)],
@@ -460,25 +462,42 @@ def _boxplot(ax, to_plot, labels):
     if len(to_plot) == 2:
         tstat, pvalue = scipy.stats.ttest_ind(numpy.log(to_plot[0]), numpy.log(to_plot[1]))
         pvalue = str(int(100 * pvalue if not math.isnan(pvalue) else 0) / 100.0)
-        ax.text(
-            0.8, 0.8,
-            'p-value: ' + str(pvalue),
-            horizontalalignment='center', verticalalignment='baseline')
     means = []
     medians = []
     stds = []
+    minimum = None
     for i in to_plot:
         means.append(numpy.mean(i))
         stds.append(numpy.std(i))
         medians.append(numpy.median(i))
+        if len(i) == 0:
+            continue
+        if minimum is None:
+            minimum = min(i)
+        else:
+            minimum = min(min(i), minimum)
     labels, to_plot, means, medians, stds = zip(*sorted(
         zip(labels, to_plot, means, medians, stds)))
-    ax.boxplot(to_plot)
-    ax.errorbar(range(1, len(to_plot) + 1), means, yerr=stds, fmt='o')
+    bp = ax.boxplot(to_plot, patch_artist=True, notch=True)
+    plt.setp(bp['boxes'], color='black')
+    plt.setp(bp['whiskers'], color='black')
+    plt.setp(bp['fliers'], color='red', marker='+')
+    for patch in bp['boxes']:
+        patch.set_facecolor('royalblue')
+    ax.yaxis.grid(True, linestyle='-', which='major', color='lightgrey', alpha=0.5)
+    ax.set_axisbelow(True)
+    # ax.errorbar(range(1, len(to_plot) + 1), means, yerr=stds, fmt='o')
     for i, m in zip(range(len(means)), means):
-        ax.annotate(str(numpy.round(m, 2)), (i + 1, m))
+        ax.plot(i + 1, m, 'o', color='black')
+        ax.annotate(str(numpy.round(m, 2)), (i + 1 + min(max(len(to_plot) * 0.05, 0.5), 0.1), m))
     for i, m in zip(range(len(medians)), medians):
-        ax.annotate(str(numpy.round(m, 2)), (i + 1, m))
+        ax.annotate(str(numpy.round(m, 2)), (i + 1 + min(max(len(to_plot) * 0.05, 0.5), 0.1), m))
+    if len(to_plot) == 2 and minimum is not None:
+        ax.text(
+            1.5, (medians[0] - minimum) / 2.0 + minimum,
+            'p-value: ' + str(pvalue),
+            horizontalalignment='center', verticalalignment='center',
+            fontweight='bold')
     ax.set_xticklabels(labels)
     for label in ax.get_xticklabels():
         label.set_rotation(10)
