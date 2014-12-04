@@ -46,7 +46,7 @@ def load_answers_to_ab_testing(args):
     return data
 
 
-def map_graphs(args, data, mapping, prefix, filename_prefix, group_column):
+def map_graphs(args, data, feedback, mapping, prefix, filename_prefix, group_column):
     filename_prefix += str(group_column) + "_"
     if analysis.is_group(args, 'motivation'):
         fig = plt.figure()
@@ -86,6 +86,12 @@ def map_graphs(args, data, mapping, prefix, filename_prefix, group_column):
         graph.boxplot_success_per_user(fig, data, group_column, mapping)
         fig.suptitle('AB testing: mean success rate')
         analysis.savefig(args, fig, filename_prefix + 'success_per_user', prefix=prefix)
+
+        if feedback is not None:
+            fig = plt.figure()
+            graph.plot_feedback(fig, data, feedback, group_column, mapping)
+            fig.suptitle('AB testing: feedback')
+            analysis.savefig(args, fig, filename_prefix + 'feedback', prefix=prefix)
         print "Group [motivation] processed"
     else:
         print "Group [motivation] skipped"
@@ -141,6 +147,7 @@ def main():
 
     data = load_answers_to_ab_testing(args)
     data, mapping = decorator.ab_group(data, args.interested_prefixes)
+    feedback = analysis.load_feedback(args)
     if args.interested_prefixes == ['recommendation_target_prob_adjustment_']:
         mapping['ab_group'] = 'Is target probability adjustment enabled?'
     elif args.interested_prefixes == ['recommendation_target_prob_']:
@@ -161,12 +168,12 @@ def main():
             map_prefix = (map_name if isinstance(map_name, str) else '_'.join(map_name)) + '__'
             print "# Processing AB group"
             map_graphs(
-                args, map_data, mapping, prefix,
+                args, map_data, feedback, mapping, prefix,
                 map_prefix,
                 'ab_group')
     else:
         print "# Processing AB group"
-        map_graphs(args, data, mapping, prefix, '', 'ab_group')
+        map_graphs(args, data, feedback, mapping, prefix, '', 'ab_group')
 
 
 if __name__ == "__main__":

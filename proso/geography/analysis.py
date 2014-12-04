@@ -200,6 +200,13 @@ def decorator_optimization(answers):
     return decorated
 
 
+def load_feedback(args):
+    filename = args.data_dir + '/feedback.rating.csv'
+    if not path.exists(filename):
+        return None
+    return pandas.read_csv(filename, index_col=False)
+
+
 def load_answers(args, all_needed=True):
     filename = 'geography.answer_%s' % data_hash(args)
     data_all = None

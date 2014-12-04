@@ -9,6 +9,29 @@ import math
 import matplotlib.pyplot as plt
 
 
+def plot_feedback(figure, answers, feedback, group_column, group_name_mapping=None):
+    ax = figure.add_subplot(111)
+    group_names = []
+    easy = []
+    medium = []
+    hard = []
+    for group_name, group_data in answers.groupby(group_column):
+        users = group_data['user'].unique()
+        values = feedback[feedback['user'].isin(users)]
+        ratios = values.groupby('value').apply(lambda g: float(len(g)) / len(values)).to_dict()
+        easy.append(ratios.get(1, 0))
+        medium.append(ratios.get(2, 0))
+        hard.append(ratios.get(3, 0))
+        group_names.append(group_name_mapping[group_name] if group_name_mapping else group_name)
+    group_names, easy, medium, hard = zip(*sorted(zip(group_names, easy, medium, hard)))
+    ax.set_xlabel(group_column)
+    ax.set_ylabel('Feedback Ratio')
+    ax.plot(group_names, easy, label='Easy')
+    ax.plot(group_names, medium, label='Medium')
+    ax.plot(group_names, hard, label='Hard')
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+
+
 def plot_maps_success_vs_number_of_answers(figure, answers):
     groups = answers.groupby(['place_map_code', 'place_asked_type']).apply(lambda d: (sum(d['place_asked'] == d['place_answered']), len(d))).to_dict()
     ax = figure.add_subplot(111)
