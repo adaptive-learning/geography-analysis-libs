@@ -24,7 +24,7 @@ def plot_feedback(figure, answers, feedback, group_column, group_name_mapping=No
         hard.append(ratios.get(3, 0))
         group_names.append(group_name_mapping[group_name] if group_name_mapping else group_name)
     _plot(ax, group_names, ['Easy', 'Medium', 'Hard'], easy, medium, hard)
-    ax.set_xlabel(group_column)
+    ax.set_xlabel(group_column if not group_name_mapping else group_name_mapping.get(group_column, group_column))
     ax.set_ylabel('Feedback Ratio')
 
 
@@ -110,7 +110,7 @@ def plot_user_ratio(figure, answers, group_column, group_name_mapping=None, answ
         group_names.append(group_name_mapping[group_name] if group_name_mapping else group_name)
     to_plots = map(list, zip(*to_plots))
     _plot(ax, group_names, labels, *to_plots)
-    ax.set_xlabel(group_column)
+    ax.set_xlabel(group_column if not group_name_mapping else group_name_mapping.get(group_column, group_column))
     ax.set_ylabel('Ratio of Users')
 
 
@@ -475,7 +475,7 @@ def _plot(ax, labels, data_labels, *args):
     ax.set_xticks(xs)
     for i in range(1, len(zipped)):
         ax.plot(xs, zipped[i], '-o', label=data_labels[i - 1])
-    ax.set_xticklabels(labels)
+    ax.set_xticklabels(zipped[0])
     for label in ax.get_xticklabels():
         label.set_rotation(10)
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
