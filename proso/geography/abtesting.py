@@ -11,6 +11,26 @@ def drop_invalid_data(data):
     return answer.apply_filter(data, lambda d: d['inserted'] > CSRF_HOTFIX)
 
 
+def bucketing(data, group_column, mapping, buckets):
+    if mapping is None:
+        mapping = {}
+    values = data[group_column].unique()
+    values = zip(*sorted(zip(map(lambda x: mapping.get(x, x), values), values)))[1]
+    bucket_size = len(values) / buckets
+    bucket_values = {}
+    bucket_mapping = {}
+    current_bucket = 0
+    for i, value in enumerate(values):
+        if current_bucket < buckets and i % bucket_size == 0:
+            current_bucket += 1
+            bucket_mapping[current_bucket] = [mapping.get(value, value), None]
+        bucket_mapping[current_bucket][1] = mapping.get(value, value)
+        bucket_values[value] = current_bucket
+    bucket_mapping = dict(map(lambda (val, extremes): (val, ' - '.join(extremes)), bucket_mapping.items()))
+    data[group_column] = data[group_column].apply(lambda x: bucket_values[x])
+    return data, bucket_mapping
+
+
 def prepare_data(data, group_prefixes):
 
     def valid_ab_values(ab_values):

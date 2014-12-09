@@ -27,6 +27,10 @@ def load_parser():
         nargs='+',
         type=str,
         dest='filter_abvalue')
+    parser.add_argument(
+        '--buckets',
+        type=int,
+        help='create buckets for the given A/B testing values')
     return parser
 
 
@@ -144,6 +148,8 @@ def main():
 
     data = load_answers_to_ab_testing(args)
     data, mapping = decorator.ab_group(data, args.interested_prefixes)
+    if args.buckets:
+        data, mapping = abtesting.bucketing(data, 'ab_group', mapping, args.buckets)
     feedback = analysis.load_feedback(args)
     if args.interested_prefixes == ['recommendation_target_prob_adjustment_']:
         mapping['ab_group'] = 'Is target probability adjustment enabled?'
