@@ -11,6 +11,7 @@ def main():
         ['time', 'session', 'recommendation', 'knowledge', 'motivation'])
     args = parser.parse_args()
     data, data_all = analysis.load_answers(args, all_needed=False)
+    feedback = analysis.load_feedback(args, data)
     print 'Answers loaded'
     if analysis.is_any_group(args, ['recommendation', 'knowledge']):
         difficulty, prior_skill = analysis.load_difficulty_and_prior_skill(args, data_all)
@@ -70,6 +71,9 @@ def main():
         fig = plt.figure()
         graph.plot_first_session_vs_total(fig, data)
         analysis.savefig(args, fig, 'first_session_vs_total')
+        fig = plt.figure()
+        graph.plot_feedback_by_success(fig, feedback, data)
+        analysis.savefig(args, fig, 'feedback_by_success')
         print "Group [motivation] processed"
         gc.collect()
     else:

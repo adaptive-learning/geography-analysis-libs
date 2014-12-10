@@ -200,11 +200,19 @@ def decorator_optimization(answers):
     return decorated
 
 
-def load_feedback(args):
+def load_feedback(args, data):
+    cache_filename = 'feedback.rating_%s' % data_hash(args)
+    csv_parser = lambda f: pandas.read_csv(f, index_col=False, parse_dates=['inserted'])
+    feedback = read_cache(args, cache_filename, csv_parser=csv_parser)
+    if feedback is not None:
+        return feedback
     filename = args.data_dir + '/feedback.rating.csv'
     if not path.exists(filename):
         return None
-    return pandas.read_csv(filename, index_col=False)
+    feedback = csv_parser(filename)
+    feedback = decorator.success_before(feedback[feedback['user'].isin(data['user'].unique())], data)
+    write_cache(args, feedback, cache_filename)
+    return feedback
 
 
 def load_answers(args, all_needed=True):

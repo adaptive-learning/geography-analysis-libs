@@ -9,7 +9,30 @@ import math
 import matplotlib.pyplot as plt
 
 
-def plot_feedback(figure, answers, feedback, group_column, group_name_mapping=None):
+def plot_feedback_by_success(figure, feedback, answers):
+    feedback = decorator.success_before(feedback, answers)
+    ax = figure.add_subplot(111)
+    labels = []
+    easy = []
+    medium = []
+    hard = []
+    for group_name, group_data in feedback.groupby('success_before'):
+        if len(group_data) <= 10:
+            continue
+        labels.append(group_name)
+        ratios = group_data.groupby('value').apply(lambda g: float(len(g)) / len(group_data)).to_dict()
+        easy.append(ratios.get(1, 0))
+        medium.append(ratios.get(2, 0))
+        hard.append(ratios.get(3, 0))
+    print easy
+    print medium
+    print hard
+    _plot(ax, labels, ['Easy', 'Medium', 'Hard'], easy, medium, hard)
+    ax.set_xlabel("User's Success before Rating")
+    ax.set_ylabel("Feedback Ratio")
+
+
+def plot_feedback_by_group(figure, answers, feedback, group_column, group_name_mapping=None):
     ax = figure.add_subplot(111)
     group_names = []
     easy = []

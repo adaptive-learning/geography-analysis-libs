@@ -90,9 +90,9 @@ def map_graphs(args, data, feedback, mapping, prefix, filename_prefix, group_col
 
         if feedback is not None:
             fig = plt.figure()
-            graph.plot_feedback(fig, data, feedback, group_column, mapping)
-            fig.suptitle('AB testing: feedback')
-            analysis.savefig(args, fig, filename_prefix + 'feedback', prefix=prefix)
+            graph.plot_feedback_by_group(fig, data, feedback, group_column, mapping)
+            fig.suptitle('AB testing: feedback per group')
+            analysis.savefig(args, fig, filename_prefix + 'feedback_per_group', prefix=prefix)
         print "Group [motivation] processed"
     else:
         print "Group [motivation] skipped"
@@ -150,7 +150,7 @@ def main():
     data, mapping = decorator.ab_group(data, args.interested_prefixes)
     if args.buckets:
         data, mapping = abtesting.bucketing(data, 'ab_group', mapping, args.buckets)
-    feedback = analysis.load_feedback(args)
+    feedback = analysis.load_feedback(args, data)
     if args.interested_prefixes == ['recommendation_target_prob_adjustment_']:
         mapping['ab_group'] = 'Is target probability adjustment enabled?'
     elif args.interested_prefixes == ['recommendation_target_prob_']:

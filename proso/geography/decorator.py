@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from proso.geography.dfutil import iterdicts
 
 
 def interested_ab_values(answers, group_prefixes, override=False):
@@ -11,6 +12,27 @@ def interested_ab_values(answers, group_prefixes, override=False):
         apply(lambda values: '__'.join(sorted(filter_ab_values_by_prefix(values, group_prefixes))))
     )
     return answers
+
+
+def success_before(feedback, answers, override=False):
+    if not override and 'success_before' in feedback:
+        return feedback
+    feedback.sort(['user', 'id'], inplace=True)
+    last_user = None
+    user_data = None
+    last_date = None
+    success_before_dict = {}
+    for row in iterdicts(feedback):
+        if row['user'] != last_user:
+            last_user = row['user']
+            last_date = None
+            user_data = answers[answers['user'] == last_user]
+        filter_fun = lambda x: x['inserted'] < row['inserted'] and (last_date is None or x['inserted'] > last_date)
+        interval_data = user_data[user_data.apply(filter_fun, axis=1)]
+        prob = sum(interval_data['place_asked'] == interval_data['place_answered']) / float(len(interval_data))
+        success_before_dict[row['id']] = int(5 * round(float(prob * 100) / 5))
+    feedback['success_before'] = feedback.apply(lambda x: success_before_dict[x['id']], axis=1)
+    return feedback
 
 
 def filter_ab_values_by_prefix(values, prefixes):
