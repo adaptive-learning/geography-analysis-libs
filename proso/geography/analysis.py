@@ -3,6 +3,7 @@ from os import path, makedirs
 import proso.geography.answers as answer
 import proso.geography.decorator as decorator
 import proso.geography.difficulty
+import proso.geography.user as user
 import gc
 import numpy as np
 import pandas
@@ -111,6 +112,10 @@ def parser_init(required=None):
         dest='max_date',
         type=date_limit,
         help='date lower bound for which the data is taken')
+    parser.add_argument(
+        '--drop-outliers',
+        dest='drop_outliers',
+        type=int)
     return parser
 
 
@@ -163,7 +168,7 @@ def read_cache(args, filename, csv_parser=None):
 
 
 def data_hash(args):
-    return ('apu_%s__dcs_%s__dts_%s__mc_%s__pat_%s__mt_%s__du_%s__mind_%s__maxd_%s' % (
+    return ('apu_%s__dcs_%s__dts_%s__mc_%s__pat_%s__mt_%s__du_%s__mind_%s__maxd_%s__do_%s' % (
         args.answers_per_user,
         args.drop_classrooms,
         args.drop_tests,
@@ -172,7 +177,8 @@ def data_hash(args):
         'x'.join(args.map_type if args.map_type else []),
         args.drop_users,
         args.min_date,
-        args.max_date)).replace(' ', '_')
+        args.max_date,
+        args.drop_outliers)).replace(' ', '_')
 
 
 def parser_group(parser, groups):
@@ -253,6 +259,11 @@ def load_answers(args, all_needed=True):
         data = answer.drop_classrooms(data)
     if args.answers_per_user:
         data = answer.drop_users_by_answers(data, answer_limit_min=args.answers_per_user)
+    if args.drop_outliers:
+        answers_per_user = user.answers_per_user(data)
+        [limit_min, limit_max] = np.percentile(answers_per_user.values(), [args.drop_outliers, 100 - args.drop_outliers])
+        valid_users = map(lambda (u, _): u, filter(lambda (u, n): n >= limit_min and n <= limit_max, answers_per_user.items()))
+        data = data[data['user'].isin(valid_users)]
     write_cache(args, data, filename)
     return data, data_all
 
