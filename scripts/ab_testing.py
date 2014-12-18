@@ -131,10 +131,12 @@ def map_graphs(args, data, feedback, mapping, prefix, filename_prefix, group_col
         print "Group [difference] skipped"
 
     if analysis.is_group(args, 'text'):
-        with open(analysis.get_destination(args, prefix) + '/' + filename_prefix + 'output.txt', 'w') as f:
+        filename = analysis.get_destination(args, prefix) + '/' + filename_prefix + 'output.txt'
+        with open(filename, 'w') as f:
             textstats.answers_per_user(f, data, group_column, mapping)
             textstats.answers_per_user_pvalues(f, data, group_column, mapping)
             textstats.user_ratio(f, data, group_column, mapping)
+        print 'Saving', filename
         print "Group [text] processed"
     else:
         print "Group [text] skipped"

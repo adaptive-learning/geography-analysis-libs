@@ -15,6 +15,8 @@ def interested_ab_values(answers, group_prefixes, override=False):
 
 
 def success_before(feedback, answers, override=False):
+    if len(feedback) == 0:
+        return feedback
     if not override and 'success_before' in feedback:
         return feedback
     feedback.sort(['user', 'id'], inplace=True)
