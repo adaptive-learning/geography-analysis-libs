@@ -3,55 +3,130 @@ import decorator
 import user
 import overtime
 import success
+import textstats
 import numpy
 import scipy.stats
 import math
 import matplotlib.pyplot as plt
 
+FEEDBACK_MAPPING = {
+    1: 'Easy',
+    2: 'Medium',
+    3: 'Hard'
+}
 
-def plot_feedback_by_success(figure, feedback, answers):
-    feedback = decorator.success_before(feedback, answers)
+
+def boxplot_prior_skill(figure, answers, prior_skill, group_column, group_name_mapping=None, verbose=False):
     ax = figure.add_subplot(111)
-    labels = []
-    easy = []
-    medium = []
-    hard = []
-    for group_name, group_data in feedback.groupby('success_before'):
-        if len(group_data) <= 10:
-            continue
-        labels.append(group_name)
-        ratios = group_data.groupby('value').apply(lambda g: float(len(g)) / len(group_data)).to_dict()
-        easy.append(ratios.get(1, 0))
-        medium.append(ratios.get(2, 0))
-        hard.append(ratios.get(3, 0))
-    print easy
-    print medium
-    print hard
-    _plot(ax, labels, ['Easy', 'Medium', 'Hard'], easy, medium, hard)
-    ax.set_xlabel("User's Success before Rating")
-    ax.set_ylabel("Feedback Ratio")
-
-
-def plot_feedback_by_group(figure, answers, feedback, group_column, group_name_mapping=None):
-    ax = figure.add_subplot(111)
+    to_plot = []
     group_names = []
-    easy = []
-    medium = []
-    hard = []
     for group_name, group_data in answers.groupby(group_column):
         users = group_data['user'].unique()
-        values = feedback[feedback['user'].isin(users)]
-        ratios = values.groupby('value').apply(lambda g: float(len(g)) / len(values)).to_dict()
-        easy.append(ratios.get(1, 0))
-        medium.append(ratios.get(2, 0))
-        hard.append(ratios.get(3, 0))
+        to_plot.append(map(lambda u: prior_skill[u], users))
         group_names.append(group_name_mapping[group_name] if group_name_mapping else group_name)
-    _plot(ax, group_names, ['Easy', 'Medium', 'Hard'], easy, medium, hard)
-    ax.set_xlabel(group_column if not group_name_mapping else group_name_mapping.get(group_column, group_column))
-    ax.set_ylabel('Feedback Ratio')
+    ax.set_ylabel('Prior Skill')
+    _boxplot(ax, to_plot, group_names, name='Prior Skill', verbose=verbose)
+    figure.tight_layout()
 
 
-def plot_maps_success_vs_number_of_answers(figure, answers):
+def boxplot_feedback_vs_number_of_answers(figure, feedback, answers, verbose=False):
+    ax = figure.add_subplot(111)
+    first_feedback = (feedback.sort('id').
+        drop_duplicates('user').
+        groupby('user').
+        apply(lambda x: x['value'].mean()).to_dict())
+    labels = []
+    to_plot = []
+    answers = answers[answers['user'].isin(first_feedback.keys())]
+    answers['temp_group'] = answers['user'].apply(lambda u: first_feedback[u])
+    for group_name, group_data in answers.groupby('temp_group'):
+        number = user.answers_per_user(group_data)
+        to_plot.append(number.values())
+        labels.append('%s (%s)' % (FEEDBACK_MAPPING[group_name], len(number)))
+    del answers['temp_group']
+    ax.set_yscale('log')
+    ax.set_ylabel('Number of Answers')
+    ax.set_xlabel('First Feedback')
+    _boxplot(ax, to_plot, labels, name='Feedback vs Number of Answers', verbose=verbose)
+    figure.tight_layout()
+
+
+def plot_feedback_by_success(figure, feedback, answers, prior_skill, verbose=False):
+    feedback = decorator.success_before(feedback, answers)
+    limits = numpy.percentile(prior_skill.values(), [25, 75])
+    users_all = list(set(prior_skill.keys()) & set(feedback['user'].unique()))
+    users_low = filter(
+        lambda user: prior_skill[user] < limits[0],
+        users_all)
+    users_medium = filter(
+        lambda user: prior_skill[user] >= limits[0] and prior_skill[user] < limits[1],
+        users_all)
+    users_high = filter(
+        lambda user: prior_skill[user] >= limits[1],
+        users_all)
+    to_plot = {
+        'All Users': users_all,
+        'Users with Low Skill': users_low,
+        'Users with Medium Skill': users_medium,
+        'Users with High Skill': users_high
+    }
+    i = 1
+    for title, data in to_plot.items():
+        ax = figure.add_subplot(2, 2, i)
+        labels = []
+        easy = []
+        medium = []
+        hard = []
+        group_feedback = feedback[feedback['user'].isin(data)]
+        for group_name, group_data in group_feedback.groupby('success_before'):
+            if len(group_data) <= 10:
+                continue
+            labels.append(group_name)
+            ratios = group_data.groupby('value').apply(
+                lambda g: float(len(g)) / len(group_data)).to_dict()
+            easy.append(ratios.get(1, 0))
+            medium.append(ratios.get(2, 0))
+            hard.append(ratios.get(3, 0))
+        _plot(ax, labels, ['Easy', 'Medium', 'Hard'], i == 4, easy, medium, hard)
+        ax.set_xlabel("User's Success before Rating")
+        ax.set_ylabel("Feedback Ratio")
+        ax.set_title(title)
+        i += 1
+    figure.tight_layout()
+
+
+def plot_feedback_by_group(figure, answers, feedback, prior_skill, group_column, group_name_mapping=None, verbose=False):
+    [answers_low, answers_medium, answers_high] = _split_data_by_skill(
+        answers, prior_skill, [25, 75])
+    to_plot_input = {
+        'All Users': answers,
+        'Users with Low Skill': answers_low,
+        'Users with Medium Skill': answers_medium,
+        'Users with High Skill': answers_high
+    }
+    i = 1
+    for title, data in to_plot_input.items():
+        ax = figure.add_subplot(2, 2, i)
+        group_names = []
+        easy = []
+        medium = []
+        hard = []
+        for group_name, group_data in data.groupby(group_column):
+            users = group_data['user'].unique()
+            values = feedback[feedback['user'].isin(users)]
+            ratios = values.groupby('value').apply(lambda g: float(len(g)) / len(values)).to_dict()
+            easy.append(ratios.get(1, 0))
+            medium.append(ratios.get(2, 0))
+            hard.append(ratios.get(3, 0))
+            group_names.append(group_name_mapping[group_name] if group_name_mapping else group_name)
+        _plot(ax, group_names, ['Easy', 'Medium', 'Hard'], i == 4, easy, medium, hard)
+        ax.set_title(title)
+        ax.set_xlabel(group_column if not group_name_mapping else group_name_mapping.get(group_column, group_column))
+        ax.set_ylabel('Feedback Ratio')
+        i += 1
+
+
+def plot_maps_success_vs_number_of_answers(figure, answers, verbose=False):
     groups = answers.groupby(['place_map_code', 'place_asked_type']).apply(lambda d: (sum(d['place_asked'] == d['place_answered']), len(d))).to_dict()
     ax = figure.add_subplot(111)
     for (map_code, place_type), (correct, number) in groups.iteritems():
@@ -63,7 +138,7 @@ def plot_maps_success_vs_number_of_answers(figure, answers):
     ax.set_ylabel("Success")
 
 
-def plot_answers_vs_prior_skill(figure, answers, prior_skill):
+def plot_answers_vs_prior_skill(figure, answers, prior_skill, verbose=False):
     answers = decorator.session_number(answers)
     ax = figure.add_subplot(111)
     total = user.answers_per_user(answers)
@@ -76,7 +151,7 @@ def plot_answers_vs_prior_skill(figure, answers, prior_skill):
     ax.set_xscale('log')
 
 
-def plot_first_session_vs_total(figure, answers):
+def plot_first_session_vs_total(figure, answers, verbose=False):
     answers = decorator.session_number(answers)
     ax = figure.add_subplot(111)
     total = user.answers_per_user(answers)
@@ -92,7 +167,7 @@ def plot_first_session_vs_total(figure, answers):
     ax.set_yscale('log')
 
 
-def plot_first_session_vs_session_number(figure, answers):
+def plot_first_session_vs_session_number(figure, answers, verbose=False):
     answers = decorator.session_number(answers)
     ax = figure.add_subplot(111)
     ses = user.session_per_user(answers)
@@ -106,7 +181,7 @@ def plot_first_session_vs_session_number(figure, answers):
     ax.set_xscale('log')
 
 
-def plot_user_ratio(figure, answers, group_column, group_name_mapping=None, answer_numbers_min=None, session_numbers=None):
+def plot_user_ratio(figure, answers, group_column, group_name_mapping=None, answer_numbers_min=None, session_numbers=None, verbose=False):
     ax = figure.add_subplot(111)
     group_names = []
     to_plots = []
@@ -132,12 +207,12 @@ def plot_user_ratio(figure, answers, group_column, group_name_mapping=None, answ
         to_plots.append(to_plot)
         group_names.append(group_name_mapping[group_name] if group_name_mapping else group_name)
     to_plots = map(list, zip(*to_plots))
-    _plot(ax, group_names, labels, *to_plots)
+    _plot(ax, group_names, labels, True, *to_plots)
     ax.set_xlabel(group_column if not group_name_mapping else group_name_mapping.get(group_column, group_column))
     ax.set_ylabel('Ratio of Users')
 
 
-def boxplot_time_gap(figure, answers, group_column, group_name_mapping=None):
+def boxplot_time_gap(figure, answers, group_column, group_name_mapping=None, verbose=False):
     ax = figure.add_subplot(111)
     labels = []
     to_plot = []
@@ -150,10 +225,10 @@ def boxplot_time_gap(figure, answers, group_column, group_name_mapping=None):
             str(group_name_mapping[group_name] if group_name_mapping else group_name) + '\n(' + str(len(gaps)) + ')')
     ax.set_xlabel(group_column)
     ax.set_ylabel('time gap (seconds, log)')
-    _boxplot(ax, to_plot, labels)
+    _boxplot(ax, to_plot, labels, name='Time Gap', verbose=verbose)
 
 
-def boxplot_number_of_options(figure, answers, group_column, group_name_mapping=None):
+def boxplot_number_of_options(figure, answers, group_column, group_name_mapping=None, verbose=False):
     ax = figure.add_subplot(111)
     labels = []
     to_plot = []
@@ -162,10 +237,10 @@ def boxplot_number_of_options(figure, answers, group_column, group_name_mapping=
         to_plot.append(opts)
         labels.append(
             str(group_name_mapping[group_name] if group_name_mapping else group_name) + '\n(' + str(len(opts)) + ')')
-    _boxplot(ax, to_plot, labels)
+    _boxplot(ax, to_plot, labels, name='Number of Options', verbose=verbose)
 
 
-def boxplot_maps_per_user(figure, answers, group_column, group_name_mapping=None):
+def boxplot_maps_per_user(figure, answers, group_column, group_name_mapping=None, verbose=False):
     ax = figure.add_subplot(111)
     labels = []
     to_plot = []
@@ -174,10 +249,10 @@ def boxplot_maps_per_user(figure, answers, group_column, group_name_mapping=None
         to_plot.append(m)
         labels.append(
             str(group_name_mapping[group_name] if group_name_mapping else group_name) + '\n(' + str(len(m)) + ')')
-    _boxplot(ax, to_plot, labels)
+    _boxplot(ax, to_plot, labels, name='Number of Maps per User', verbose=verbose)
 
 
-def boxplot_success_per_user(figure, answers, group_column, group_name_mapping=None):
+def boxplot_success_per_user(figure, answers, group_column, group_name_mapping=None, verbose=False):
     ax = figure.add_subplot(111)
     labels = []
     to_plot = []
@@ -186,26 +261,38 @@ def boxplot_success_per_user(figure, answers, group_column, group_name_mapping=N
         to_plot.append(s)
         labels.append(
             str(group_name_mapping[group_name] if group_name_mapping else group_name) + '\n(' + str(len(s)) + ')')
-    _boxplot(ax, to_plot, labels)
+    _boxplot(ax, to_plot, labels, name='Success per User', verbose=verbose)
 
 
-def boxplot_answers_per_user(figure, answers, group_column, group_name_mapping=None):
-    ax = figure.add_subplot(111)
-    labels = []
-    to_plot = []
-    for group_name, group_data in answers.groupby(group_column):
-        number = user.answers_per_user(group_data)
-        to_plot.append(number.values())
-        labels.append(
-            str(group_name_mapping[group_name] if group_name_mapping else group_name) + '\n(' + str(len(number)) + ')')
-    ax.set_yscale('log')
-    ax.set_xlabel(group_name_mapping.get(group_column, group_column) if group_name_mapping else group_column)
-    ax.set_ylabel('number of answers')
-    _boxplot(ax, to_plot, labels)
+def boxplot_answers_per_user(figure, answers, prior_skill, group_column, group_name_mapping=None, verbose=False):
+    [answers_low, answers_medium, answers_high] = _split_data_by_skill(
+        answers, prior_skill, [25, 75])
+    to_plot_input = {
+        'All Users': answers,
+        'Users with Low Skill': answers_low,
+        'Users with Medium Skill': answers_medium,
+        'Users with High Skill': answers_high
+    }
+    i = 1
+    for title, data in to_plot_input.items():
+        ax = figure.add_subplot(2, 2, i)
+        labels = []
+        to_plot = []
+        for group_name, group_data in data.groupby(group_column):
+            number = user.answers_per_user(group_data)
+            to_plot.append(number.values())
+            labels.append(
+                str(group_name_mapping[group_name] if group_name_mapping else group_name) + '\n(' + str(len(number)) + ')')
+        ax.set_yscale('log')
+        ax.set_xlabel(group_name_mapping.get(group_column, group_column) if group_name_mapping else group_column)
+        ax.set_ylabel('number of answers')
+        ax.set_title(title)
+        _boxplot(ax, to_plot, labels, name='Answers per User - %s' % title, verbose=verbose)
+        i += 1
     figure.tight_layout()
 
 
-def hist_answers_per_place_user(figure, answers, group_column, group_name_mapping=None):
+def hist_answers_per_place_user(figure, answers, group_column, group_name_mapping=None, verbose=False):
     ax = figure.add_subplot(111)
     to_plots = []
     group_names = []
@@ -228,7 +315,7 @@ def hist_answers_per_place_user(figure, answers, group_column, group_name_mappin
     figure.tight_layout()
 
 
-def hist_maps_per_user(figure, answers, group_column, group_name_mapping=None):
+def hist_maps_per_user(figure, answers, group_column, group_name_mapping=None, verbose=False):
     ax = figure.add_subplot(111)
     to_plots = []
     group_names = []
@@ -251,7 +338,7 @@ def hist_maps_per_user(figure, answers, group_column, group_name_mapping=None):
     figure.tight_layout()
 
 
-def hist_answers_per_user(figure, answers, group_column, group_name_mapping=None):
+def hist_answers_per_user(figure, answers, group_column, group_name_mapping=None, verbose=False):
     ax = figure.add_subplot(111)
     to_plots = []
     group_names = []
@@ -274,15 +361,9 @@ def hist_answers_per_user(figure, answers, group_column, group_name_mapping=None
     figure.tight_layout()
 
 
-def hist_rolling_success(figure, answers, prior_skill):
-    limits = numpy.percentile(prior_skill.values(), [25, 75])
-    answers_low = answers[
-        answers['user'].apply(lambda user: prior_skill[user] < limits[0])]
-    answers_medium = answers[
-        answers['user'].apply(
-            lambda user: prior_skill[user] >= limits[0] and prior_skill[user] < limits[1])]
-    answers_high = answers[
-        answers['user'].apply(lambda user: prior_skill[user] >= limits[1])]
+def hist_rolling_success(figure, answers, prior_skill, verbose=False):
+    [answers_low, answers_medium, answers_high] = _split_data_by_skill(
+        answers, prior_skill, [25, 75])
     ax = figure.add_subplot(111)
     ax.hist(
         [
@@ -297,7 +378,7 @@ def hist_rolling_success(figure, answers, prior_skill):
     figure.tight_layout()
 
 
-def boxplot_success_diff(figure, answers, group_column, session_number_first, session_number_second):
+def boxplot_success_diff(figure, answers, group_column, session_number_first, session_number_second, verbose=False):
     ax = figure.add_subplot(111)
     labels = []
     to_plot = []
@@ -308,12 +389,12 @@ def boxplot_success_diff(figure, answers, group_column, session_number_first, se
             session_number_second)
         to_plot.append(diffs)
         labels.append(group_name + '\n(' + str(len(diffs)) + ')')
-    _boxplot(ax, to_plot, labels)
+    _boxplot(ax, to_plot, labels, name='Success Difference', verbose=verbose)
     ax.set_xlabel(group_column)
     ax.set_ylabel('relative success difference')
 
 
-def boxplot_prior_skill_diff(figure, answers, difficulty, group_column, session_number_first, session_number_second):
+def boxplot_prior_skill_diff(figure, answers, difficulty, group_column, session_number_first, session_number_second, verbose=False):
     ax = figure.add_subplot(111)
     labels = []
     to_plot = []
@@ -325,13 +406,13 @@ def boxplot_prior_skill_diff(figure, answers, difficulty, group_column, session_
             session_number_second)
         to_plot.append(diffs)
         labels.append(group_name + '\n(' + str(len(diffs)) + ')')
-    _boxplot(ax, to_plot, labels)
+    _boxplot(ax, to_plot, labels, name='Prior Skill Difference', verbose=verbose)
     ax.set_yscale('log')
     ax.set_xlabel(group_column)
     ax.set_ylabel('relative difference between prior skills')
 
 
-def plot_answers_per_week(figure, answers):
+def plot_answers_per_week(figure, answers, verbose=False):
     ax1 = figure.add_subplot(111)
     to_plot = sorted(overtime.answers_per_week(answers).items())
     xs = range(len(to_plot))
@@ -350,15 +431,9 @@ def plot_answers_per_week(figure, answers):
         tl.set_color('r')
 
 
-def plot_stay_on_rolling_success(figure, answers, prior_skill):
-    limits = numpy.percentile(prior_skill.values(), [25, 75])
-    answers_low = answers[
-        answers['user'].apply(lambda user: prior_skill[user] < limits[0])]
-    answers_medium = answers[
-        answers['user'].apply(
-            lambda user: prior_skill[user] >= limits[0] and prior_skill[user] < limits[1])]
-    answers_high = answers[
-        answers['user'].apply(lambda user: prior_skill[user] >= limits[1])]
+def plot_stay_on_rolling_success(figure, answers, prior_skill, verbose=False):
+    [answers_low, answers_medium, answers_high] = _split_data_by_skill(
+        answers, prior_skill, [25, 75])
     stay_all = sorted(success.stay_on_rolling_success(answers).items())
     stay_low = sorted(success.stay_on_rolling_success(answers_low).items())
     stay_medium = sorted(success.stay_on_rolling_success(answers_medium).items())
@@ -392,7 +467,7 @@ def plot_stay_on_rolling_success(figure, answers, prior_skill):
     figure.tight_layout()
 
 
-def plot_session_length(figure, answers, portion_min=0.01):
+def plot_session_length(figure, answers, portion_min=0.01, verbose=False):
     if 'session_number' in answers:
         data = answers
     else:
@@ -426,7 +501,7 @@ def plot_session_length(figure, answers, portion_min=0.01):
         tl.set_color('r')
 
 
-def plot_session_prior_skill(figure, answers, difficulty, portion_min=0.01):
+def plot_session_prior_skill(figure, answers, difficulty, portion_min=0.01, verbose=False):
     if 'session_number' in answers:
         data = answers
     else:
@@ -452,7 +527,7 @@ def plot_session_prior_skill(figure, answers, difficulty, portion_min=0.01):
         tl.set_color('r')
 
 
-def plot_session_success(figure, answers, portion_min=0.01):
+def plot_session_success(figure, answers, portion_min=0.01, verbose=False):
     if 'session_number' in answers:
         data = answers
     else:
@@ -478,7 +553,7 @@ def plot_session_success(figure, answers, portion_min=0.01):
         tl.set_color('r')
 
 
-def plot_success_per_week(figure, answers):
+def plot_success_per_week(figure, answers, verbose=False):
     ax = figure.add_subplot(111)
     globally = sorted(overtime.success_per_week(answers).items())
     by_user = sorted(overtime.success_by_user_per_week(answers).items())
@@ -490,7 +565,7 @@ def plot_success_per_week(figure, answers):
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
 
-def _plot(ax, labels, data_labels, *args):
+def _plot(ax, labels, data_labels, show_legend, *args):
     if data_labels is None:
         data_labels = [None for i in args]
     zipped = zip(*sorted(zip(labels, *args)))
@@ -501,10 +576,11 @@ def _plot(ax, labels, data_labels, *args):
     ax.set_xticklabels(zipped[0])
     for label in ax.get_xticklabels():
         label.set_rotation(10)
-    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    if show_legend:
+        ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
 
-def _boxplot(ax, to_plot, labels):
+def _boxplot(ax, to_plot, labels, name=None, verbose=False):
     if len(to_plot) == 2:
         tstat, pvalue = scipy.stats.ttest_ind(numpy.log(to_plot[0]), numpy.log(to_plot[1]))
         pvalue = str(int(100 * pvalue if not math.isnan(pvalue) else 0) / 100.0)
@@ -532,7 +608,6 @@ def _boxplot(ax, to_plot, labels):
         patch.set_facecolor('royalblue')
     ax.yaxis.grid(True, linestyle='-', which='major', color='lightgrey', alpha=0.5)
     ax.set_axisbelow(True)
-    # ax.errorbar(range(1, len(to_plot) + 1), means, yerr=stds, fmt='o')
     for i, m in zip(range(len(means)), means):
         ax.plot(i + 1, m, 'o', color='black')
         ax.annotate(str(numpy.round(m, 2)), (i + 1 + min(max(len(to_plot) * 0.05, 0.5), 0.1), m))
@@ -547,6 +622,8 @@ def _boxplot(ax, to_plot, labels):
     ax.set_xticklabels(labels)
     for label in ax.get_xticklabels():
         label.set_rotation(10)
+    if verbose:
+        textstats.pvalues(to_plot, labels, name)
 
 
 def _plot_errorbar(plt, data, **argw):
@@ -562,3 +639,12 @@ def _plot_errorbar(plt, data, **argw):
         zip(*(zip(*data)[1]))[0],
         yerr=zip(*(zip(*data)[1]))[1],
         **argw)
+
+
+def _split_data_by_skill(answers, prior_skill, percentiles):
+    limits = numpy.percentile(prior_skill.values(), percentiles)
+    result = []
+    for minimum, maximum in zip([None] + limits, limits + [None]):
+        result.append(answers[answers['user'].apply(
+            lambda user: (minimum is None or prior_skill[user] > minimum) and (maximum is None or prior_skill[user] <= maximum))])
+    return result

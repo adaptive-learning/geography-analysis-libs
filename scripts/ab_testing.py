@@ -47,64 +47,64 @@ def load_answers_to_ab_testing(args):
     return data
 
 
-def map_graphs(args, data, feedback, mapping, prefix, filename_prefix, group_column):
+def map_graphs(args, data, feedback, prior_skill, mapping, prefix, filename_prefix, group_column):
     filename_prefix += str(group_column) + "_"
     if analysis.is_group(args, 'motivation'):
         fig = plt.figure()
-        graph.boxplot_answers_per_user(fig, data, group_column, mapping)
+        graph.boxplot_answers_per_user(fig, data, prior_skill, group_column, mapping, verbose=args.verbose)
         fig.suptitle('AB testing: number of answers per user')
-        analysis.savefig(args, fig, filename_prefix + 'answers_per_user_boxplot', prefix=prefix)
+        analysis.savefig(args, fig, filename_prefix + 'answers_per_user_boxplot', prefix=prefix, resize=2)
 
         fig = plt.figure()
-        graph.hist_answers_per_user(fig, data, group_column, mapping)
+        graph.hist_answers_per_user(fig, data, group_column, mapping, verbose=args.verbose)
         fig.suptitle('AB testing: number of answers per user')
         analysis.savefig(args, fig, filename_prefix + 'answers_per_user_hist', prefix=prefix)
 
         fig = plt.figure()
-        graph.boxplot_maps_per_user(fig, data, group_column, mapping)
+        graph.boxplot_maps_per_user(fig, data, group_column, mapping, verbose=args.verbose)
         fig.suptitle('AB testing: number of maps per user')
         analysis.savefig(args, fig, filename_prefix + 'maps_per_user_boxplot', prefix=prefix)
 
         fig = plt.figure()
-        graph.hist_maps_per_user(fig, data, group_column, mapping)
+        graph.hist_maps_per_user(fig, data, group_column, mapping, verbose=args.verbose)
         fig.suptitle('AB testing: number of maps per user')
         analysis.savefig(args, fig, filename_prefix + 'maps_per_user_hist', prefix=prefix)
 
         fig = plt.figure()
         data = decorator.session_number(data)
         graph.boxplot_answers_per_user(fig,
-            data[data['session_number'] == 0], group_column, mapping)
+            data[data['session_number'] == 0], prior_skill, group_column, mapping, verbose=args.verbose)
         fig.suptitle('AB testing: number of answers per user (only the first session)')
-        analysis.savefig(args, fig, filename_prefix + 'answers_per_user_session_0_boxplot', prefix=prefix)
+        analysis.savefig(args, fig, filename_prefix + 'answers_per_user_session_0_boxplot', prefix=prefix, resize=2)
 
         fig = plt.figure()
         graph.hist_answers_per_user(fig,
-            data[data['session_number'] == 0], group_column, mapping)
+            data[data['session_number'] == 0], group_column, mapping, verbose=args.verbose)
         fig.suptitle('AB testing: number of answers per user (only the first session)')
         analysis.savefig(args, fig, filename_prefix + 'answers_per_user_session_0_hist', prefix=prefix)
 
         fig = plt.figure()
-        graph.boxplot_success_per_user(fig, data, group_column, mapping)
+        graph.boxplot_success_per_user(fig, data, group_column, mapping, verbose=args.verbose)
         fig.suptitle('AB testing: mean success rate')
         analysis.savefig(args, fig, filename_prefix + 'success_per_user', prefix=prefix)
 
         if feedback is not None:
             fig = plt.figure()
-            graph.plot_feedback_by_group(fig, data, feedback, group_column, mapping)
+            graph.plot_feedback_by_group(fig, data, feedback, prior_skill, group_column, mapping, verbose=args.verbose)
             fig.suptitle('AB testing: feedback per group')
-            analysis.savefig(args, fig, filename_prefix + 'feedback_per_group', prefix=prefix)
+            analysis.savefig(args, fig, filename_prefix + 'feedback_per_group', prefix=prefix, resize=2)
         print "Group [motivation] processed"
     else:
         print "Group [motivation] skipped"
 
     if analysis.is_group(args, 'progress'):
         fig = plt.figure()
-        graph.plot_user_ratio(fig, data, group_column, mapping, session_numbers=[1, 2])
+        graph.plot_user_ratio(fig, data, group_column, mapping, session_numbers=[1, 2], verbose=args.verbose)
         fig.suptitle('AB testing: Users with at least the given number of sessions')
         analysis.savefig(args, fig, filename_prefix + 'users_with_n_sessions', prefix=prefix)
 
         fig = plt.figure()
-        graph.plot_user_ratio(fig, data, group_column, mapping, answer_numbers_min=[20, 30, 50])
+        graph.plot_user_ratio(fig, data, group_column, mapping, answer_numbers_min=[20, 30, 50], verbose=args.verbose)
         fig.suptitle('AB testing: Users with at least the given number of answers')
         analysis.savefig(args, fig, filename_prefix + 'users_with_n_answers', prefix=prefix)
         print "Group [progress] processed"
@@ -113,19 +113,10 @@ def map_graphs(args, data, feedback, mapping, prefix, filename_prefix, group_col
 
     if analysis.is_group(args, 'difference'):
         fig = plt.figure()
-        graph.boxplot_number_of_options(fig, data, group_column, mapping)
-        fig.suptitle('AB testing: Number of options')
-        analysis.savefig(args, fig, filename_prefix + 'number_of_options', prefix=prefix)
+        graph.boxplot_prior_skill(fig, data, prior_skill, group_column, mapping, verbose=args.verbose)
+        fig.suptitle('AB testing: Prior skill')
+        analysis.savefig(args, fig, filename_prefix + 'prior_skill', prefix=prefix)
 
-        fig = plt.figure()
-        graph.boxplot_time_gap(fig, data, group_column, mapping)
-        fig.suptitle('AB testing: Average Time Gap per User')
-        analysis.savefig(args, fig, filename_prefix + 'time_gap', prefix=prefix)
-
-        fig = plt.figure()
-        graph.hist_answers_per_place_user(fig, data, group_column, mapping)
-        fig.suptitle('AB testing: Number of Answer per Place and User')
-        analysis.savefig(args, fig, filename_prefix + 'answers_per_place_user', prefix=prefix)
         print "Group [difference] processed"
     else:
         print "Group [difference] skipped"
@@ -153,6 +144,16 @@ def main():
     if args.buckets:
         data, mapping = abtesting.bucketing(data, 'ab_group', mapping, args.buckets)
     feedback = analysis.load_feedback(args, data)
+    if analysis.is_any_group(args, ['motivation']):
+        difficulty, prior_skill = analysis.load_difficulty_and_prior_skill(args, None)
+        if difficulty is None:
+            _, data_all = analysis.load_answers(args, all_needed=True)
+            print 'Answers loaded (again)'
+            difficulty, prior_skill = analysis.load_difficulty_and_prior_skill(args, data_all)
+            data_all = None
+        print 'Difficulty loaded'
+    else:
+        difficulty, prior_skill = None, None
     if args.interested_prefixes == ['recommendation_target_prob_adjustment_']:
         mapping['ab_group'] = 'Is target probability adjustment enabled?'
     elif args.interested_prefixes == ['recommendation_target_prob_']:
@@ -173,12 +174,12 @@ def main():
             map_prefix = (map_name if isinstance(map_name, str) else '_'.join(map_name)) + '__'
             print "# Processing AB group"
             map_graphs(
-                args, map_data, feedback, mapping, prefix,
+                args, map_data, feedback, prior_skill, mapping, prefix,
                 map_prefix,
                 'ab_group')
     else:
         print "# Processing AB group"
-        map_graphs(args, data, feedback, mapping, prefix, '', 'ab_group')
+        map_graphs(args, data, feedback, prior_skill, mapping, prefix, '', 'ab_group')
 
 
 if __name__ == "__main__":

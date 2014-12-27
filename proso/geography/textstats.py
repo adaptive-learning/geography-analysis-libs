@@ -3,6 +3,7 @@ import proso.geography.user as user
 import proso.geography.success as success
 import numpy
 import scipy.stats
+import sys
 
 
 def answers_per_user(output, answers, group_column, group_name_mapping=None):
@@ -63,6 +64,29 @@ def user_ratio(output, answers, group_column, group_name_mapping=None):
             numpy.round(cell_ans_num_100[0] / float(cell_ans_num_100[1]), 2),
             numpy.round(cell_sess_num_2[0] / float(cell_sess_num_2[1]), 2)])
     output.write(table.get_string(sortby="Group"))
+    output.write("\n")
+
+
+def pvalues(values_list, labels, name, output=None):
+    if output is None:
+        output = sys.stdout
+    labels = map(lambda x: x.split("\n")[0], list(labels))
+    table = PrettyTable(['Label'] + map(
+        lambda (x, ys): '%s (%s, %s)' % (x, numpy.round(numpy.mean(ys), 2), numpy.round(numpy.mean(numpy.log(ys)), 2)),
+        zip(labels, values_list)))
+    table.align['Label'] = 'l'
+    for i, (label, values) in enumerate(zip(labels, values_list)):
+        pvalues = []
+        for other_values in values_list[(i + 1):]:
+            pvalue_common = scipy.stats.ttest_ind(values, other_values)[1]
+            pvalue_log = scipy.stats.ttest_ind(numpy.log(values), numpy.log(other_values))[1]
+            pvals = map(lambda x: numpy.round(x, 2), [pvalue_common, pvalue_log])
+            pvals = map(lambda x: ('*%s' % x) if x <= 0.05 else str(x), pvals)
+            pvalues.append(' / '.join(pvals))
+        table.add_row([label] + ((i + 1) * ['-']) + pvalues)
+    if name:
+        _header(output, name)
+    output.write(table.get_string(sortby='Label'))
     output.write("\n")
 
 

@@ -116,6 +116,10 @@ def parser_init(required=None):
         '--drop-outliers',
         dest='drop_outliers',
         type=int)
+    parser.add_argument(
+        '--verbose',
+        dest='verbose',
+        action='store_true')
     return parser
 
 
@@ -207,7 +211,7 @@ def decorator_optimization(answers):
 
 
 def load_feedback(args, data):
-    cache_filename = 'feedback.rating_%s' % data_hash(args)
+    cache_filename = 'feedback.rating_%s' % hash(tuple(data['id']))
     csv_parser = lambda f: pandas.read_csv(f, index_col=False, parse_dates=['inserted'])
     feedback = read_cache(args, cache_filename, csv_parser=csv_parser)
     if feedback is not None:
@@ -317,8 +321,11 @@ def get_destination(args, prefix=''):
     return dest_file
 
 
-def savefig(args, figure, name, prefix=''):
+def savefig(args, figure, name, prefix='', resize=1):
     filename = get_destination(args, prefix) + '/' + name + '.' + args.output
+    resized = map(lambda x: resize * x, figure.get_size_inches())
+    figure.set_size_inches(resized[0], resized[1])
+    figure.tight_layout()
     figure.savefig(filename, bbox_inches='tight')
     print "Saving", filename
     plt.close(figure)

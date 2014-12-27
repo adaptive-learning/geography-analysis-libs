@@ -13,7 +13,7 @@ def main():
     data, data_all = analysis.load_answers(args, all_needed=False)
     feedback = analysis.load_feedback(args, data)
     print 'Answers loaded'
-    if analysis.is_any_group(args, ['recommendation', 'knowledge']):
+    if analysis.is_any_group(args, ['recommendation', 'knowledge', 'motivation']):
         difficulty, prior_skill = analysis.load_difficulty_and_prior_skill(args, data_all)
         if difficulty is None:
             data, data_all = analysis.load_answers(args, all_needed=True)
@@ -23,11 +23,11 @@ def main():
     data_all = None
     if analysis.is_group(args, 'time'):
         fig = plt.figure()
-        graph.plot_answers_per_week(fig, data)
+        graph.plot_answers_per_week(fig, data, verbose=args.verbose)
         fig.suptitle('Average number of answers per user')
         analysis.savefig(args, fig, 'answers_per_week')
         fig = plt.figure()
-        graph.plot_success_per_week(fig, data)
+        graph.plot_success_per_week(fig, data, verbose=args.verbose)
         analysis.savefig(args, fig, 'success_per_week')
         print "Group [time] processed"
         gc.collect()
@@ -35,11 +35,11 @@ def main():
         print "Group [time] skipped"
     if analysis.is_group(args, 'session'):
         fig = plt.figure()
-        graph.plot_session_length(fig, data)
+        graph.plot_session_length(fig, data, verbose=args.verbose)
         fig.suptitle('Session length')
         analysis.savefig(args, fig, 'session_length')
         fig = plt.figure()
-        graph.plot_session_success(fig, data)
+        graph.plot_session_success(fig, data, verbose=args.verbose)
         analysis.savefig(args, fig, 'session_success')
         print "Group [session] processed"
         gc.collect()
@@ -47,10 +47,10 @@ def main():
         print "Group [session] skipped"
     if analysis.is_group(args, 'recommendation'):
         fig = plt.figure()
-        graph.hist_rolling_success(fig, data, prior_skill)
+        graph.hist_rolling_success(fig, data, prior_skill, verbose=args.verbose)
         analysis.savefig(args, fig, 'rolling_success_hist')
         fig = plt.figure()
-        graph.plot_stay_on_rolling_success(fig, data, prior_skill)
+        graph.plot_stay_on_rolling_success(fig, data, prior_skill, verbose=args.verbose)
         analysis.savefig(args, fig, 'stay_on_rolling_success')
         print "Group [recommendation] processed"
         gc.collect()
@@ -58,7 +58,7 @@ def main():
         print "Group [recommendation] skipped"
     if analysis.is_group(args, 'knowledge'):
         fig = plt.figure()
-        graph.plot_session_prior_skill(fig, data, difficulty)
+        graph.plot_session_prior_skill(fig, data, difficulty, verbose=args.verbose)
         analysis.savefig(args, fig, 'session_prior_skill')
         print "Group [knowledge] processed"
         gc.collect()
@@ -66,14 +66,17 @@ def main():
         print "Group [knowledge] skipped"
     if analysis.is_group(args, 'motivation'):
         fig = plt.figure()
-        graph.plot_maps_success_vs_number_of_answers(fig, data)
-        analysis.savefig(args, fig, 'success_vs_number_of_answers')
+        graph.plot_maps_success_vs_number_of_answers(fig, data, verbose=args.verbose)
+        analysis.savefig(args, fig, 'success_vs_number_of_answers', resize=2)
         fig = plt.figure()
         graph.plot_first_session_vs_total(fig, data)
         analysis.savefig(args, fig, 'first_session_vs_total')
         fig = plt.figure()
-        graph.plot_feedback_by_success(fig, feedback, data)
+        graph.plot_feedback_by_success(fig, feedback, data, prior_skill, verbose=args.verbose)
         analysis.savefig(args, fig, 'feedback_by_success')
+        fig = plt.figure()
+        graph.boxplot_feedback_vs_number_of_answers(fig, feedback, data, verbose=args.verbose)
+        analysis.savefig(args, fig, 'feedback_vs_answers')
         print "Group [motivation] processed"
         gc.collect()
     else:
