@@ -120,6 +120,11 @@ def parser_init(required=None):
         '--verbose',
         dest='verbose',
         action='store_true')
+    parser.add_argument(
+        '--filter-abvalue',
+        nargs='+',
+        type=str,
+        dest='filter_abvalue')
     return parser
 
 
@@ -172,7 +177,7 @@ def read_cache(args, filename, csv_parser=None):
 
 
 def data_hash(args):
-    return ('apu_%s__dcs_%s__dts_%s__mc_%s__pat_%s__mt_%s__du_%s__mind_%s__maxd_%s__do_%s' % (
+    return ('apu_%s__dcs_%s__dts_%s__mc_%s__pat_%s__mt_%s__du_%s__mind_%s__maxd_%s__do_%s__fab_%s' % (
         args.answers_per_user,
         args.drop_classrooms,
         args.drop_tests,
@@ -182,7 +187,8 @@ def data_hash(args):
         args.drop_users,
         args.min_date,
         args.max_date,
-        args.drop_outliers)).replace(' ', '_')
+        args.drop_outliers,
+        'x'.join(args.filter_abvalue if args.filter_abvalue else []))).replace(' ', '_')
 
 
 def parser_group(parser, groups):
@@ -257,6 +263,8 @@ def load_answers(args, all_needed=True):
         del data['last_in_session']
         del data['session_number']
         data = decorator_optimization(data)
+    if args.filter_abvalue:
+        data = answer.apply_filter(data, lambda d: all(map(lambda g: g in d['ab_values'], args.filter_abvalue)))
     if args.drop_tests:
         data = answer.apply_filter(data, lambda x: np.isnan(x['test_id']))
     if args.drop_classrooms:

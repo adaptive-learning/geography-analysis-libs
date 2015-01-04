@@ -23,11 +23,6 @@ def load_parser():
         type=str,
         dest='split_maps')
     parser.add_argument(
-        '--filter-abvalue',
-        nargs='+',
-        type=str,
-        dest='filter_abvalue')
-    parser.add_argument(
         '--buckets',
         type=int,
         help='create buckets for the given A/B testing values')
@@ -35,14 +30,12 @@ def load_parser():
 
 
 def load_answers_to_ab_testing(args):
-    filename = 'geography.answer.ab_testing_' + '__'.join(args.interested_prefixes) + '_f_' + '__'.join(args.filter_abvalue if args.filter_abvalue else []) + '__' + analysis.data_hash(args)
+    filename = 'geography.answer.ab_testing_' + '__'.join(args.interested_prefixes) + '__' + analysis.data_hash(args)
     data = analysis.read_cache(args, filename, csv_parser=answer.from_csv)
     if data is not None:
         return data
     data, _ = analysis.load_answers(args, all_needed=False)
     data = abtesting.prepare_data(data, args.interested_prefixes)
-    if args.filter_abvalue:
-        data = answer.apply_filter(data, lambda d: all(map(lambda g: g in d['ab_values'], args.filter_abvalue)))
     analysis.write_cache(args, data, filename)
     return data
 
