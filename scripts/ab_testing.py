@@ -45,8 +45,7 @@ def map_graphs(args, data, feedback, prior_skill, mapping, prefix, filename_pref
     if analysis.is_group(args, 'motivation'):
         fig = plt.figure()
         graph.boxplot_answers_per_user(fig, data, prior_skill, group_column, mapping, verbose=args.verbose)
-        fig.suptitle('AB testing: number of answers per user')
-        analysis.savefig(args, fig, filename_prefix + 'answers_per_user_boxplot', prefix=prefix, resize=2)
+        analysis.savefig(args, fig, filename_prefix + 'answers_per_user_boxplot', prefix=prefix)
 
         fig = plt.figure()
         graph.hist_answers_per_user(fig, data, group_column, mapping, verbose=args.verbose)
@@ -68,7 +67,7 @@ def map_graphs(args, data, feedback, prior_skill, mapping, prefix, filename_pref
         graph.boxplot_answers_per_user(fig,
             data[data['session_number'] == 0], prior_skill, group_column, mapping, verbose=args.verbose)
         fig.suptitle('AB testing: number of answers per user (only the first session)')
-        analysis.savefig(args, fig, filename_prefix + 'answers_per_user_session_0_boxplot', prefix=prefix, resize=2)
+        analysis.savefig(args, fig, filename_prefix + 'answers_per_user_session_0_boxplot', prefix=prefix)
 
         fig = plt.figure()
         graph.hist_answers_per_user(fig,
@@ -84,8 +83,7 @@ def map_graphs(args, data, feedback, prior_skill, mapping, prefix, filename_pref
         if feedback is not None:
             fig = plt.figure()
             graph.plot_feedback_by_group(fig, data, feedback, prior_skill, group_column, mapping, verbose=args.verbose)
-            fig.suptitle('AB testing: feedback per group')
-            analysis.savefig(args, fig, filename_prefix + 'feedback_per_group', prefix=prefix, resize=2)
+            analysis.savefig(args, fig, filename_prefix + 'feedback_per_group', prefix=prefix)
         print "Group [motivation] processed"
     else:
         print "Group [motivation] skipped"
@@ -150,10 +148,10 @@ def main():
     if args.interested_prefixes == ['recommendation_target_prob_adjustment_']:
         mapping['ab_group'] = 'Is target probability adjustment enabled?'
     elif args.interested_prefixes == ['recommendation_target_prob_']:
-        mapping['ab_group'] = 'Target probability'
+        mapping['ab_group'] = 'Target probability (%)'
     elif sorted(args.interested_prefixes) == ['recommendation_by_', 'recommendation_options_']:
         revert_mapping = dict(map(lambda (x, y): (y, x), mapping.items()))
-        mapping['ab_group'] = 'Recommendation algorithm'
+        mapping['ab_group'] = 'Recommendation Algorithm'
         mapping[revert_mapping['additive_function__naive']] = 'score, naive'
         mapping[revert_mapping['additive_function__random']] = 'score, random'
         mapping[revert_mapping['random__naive']] = 'random, naive'

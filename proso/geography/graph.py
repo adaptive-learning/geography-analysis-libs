@@ -53,77 +53,48 @@ def boxplot_feedback_vs_number_of_answers(figure, feedback, answers, verbose=Fal
 
 def plot_feedback_by_success(figure, feedback, answers, prior_skill, verbose=False):
     feedback = decorator.success_before(feedback, answers)
-    limits = numpy.percentile(prior_skill.values(), [25, 75])
-    users_all = list(set(prior_skill.keys()) & set(feedback['user'].unique()))
-    users_low = filter(
-        lambda user: prior_skill[user] < limits[0],
-        users_all)
-    users_medium = filter(
-        lambda user: prior_skill[user] >= limits[0] and prior_skill[user] < limits[1],
-        users_all)
-    users_high = filter(
-        lambda user: prior_skill[user] >= limits[1],
-        users_all)
-    to_plot = {
-        'All Users': users_all,
-        'Users with Low Skill': users_low,
-        'Users with Medium Skill': users_medium,
-        'Users with High Skill': users_high
-    }
-    i = 1
-    for title, data in to_plot.items():
-        ax = figure.add_subplot(2, 2, i)
-        labels = []
-        easy = []
-        medium = []
-        hard = []
-        group_feedback = feedback[feedback['user'].isin(data)]
-        for group_name, group_data in group_feedback.groupby('success_before'):
-            if len(group_data) <= 10:
-                continue
-            labels.append(group_name)
-            ratios = group_data.groupby('value').apply(
-                lambda g: float(len(g)) / len(group_data)).to_dict()
-            easy.append(ratios.get(1, 0))
-            medium.append(ratios.get(2, 0))
-            hard.append(ratios.get(3, 0))
-        _plot(ax, labels, ['Easy', 'Medium', 'Hard'], i == 4, easy, medium, hard)
-        ax.set_xlabel("User's Success before Rating")
-        ax.set_ylabel("Feedback Ratio")
-        ax.set_title(title)
-        i += 1
+    ax = figure.add_subplot(111)
+    labels = []
+    easy = []
+    medium = []
+    hard = []
+    for group_name, group_data in feedback.groupby('success_before'):
+        if len(group_data) <= 50:
+            continue
+        labels.append(group_name)
+        ratios = group_data.groupby('value').apply(
+            lambda g: float(len(g)) / len(group_data)).to_dict()
+        easy.append(ratios.get(1, 0))
+        medium.append(ratios.get(2, 0))
+        hard.append(ratios.get(3, 0))
+    _plot(ax, labels, ['Easy', 'Medium', 'Hard'], True, easy, medium, hard)
+    ax.set_xlabel("User's Success before Rating (%)")
+    ax.set_ylabel("Feedback Ratio")
+    ax.set_ylim(0.0, 1.0)
+    ax.set_title("Explicit Feedback")
     figure.tight_layout()
 
 
 def plot_feedback_by_group(figure, answers, feedback, prior_skill, group_column, group_name_mapping=None, verbose=False):
-    [answers_low, answers_medium, answers_high] = _split_data_by_skill(
-        answers, prior_skill, [25, 75])
-    to_plot_input = {
-        'All Users': answers,
-        'Users with Low Skill': answers_low,
-        'Users with Medium Skill': answers_medium,
-        'Users with High Skill': answers_high
-    }
-    i = 1
-    for title, data in to_plot_input.items():
-        ax = figure.add_subplot(2, 2, i)
-        group_names = []
-        easy = []
-        medium = []
-        hard = []
-        for group_name, group_data in data.groupby(group_column):
-            users = group_data['user'].unique()
-            values = feedback[feedback['user'].isin(users)]
-            ratios = values.groupby('value').apply(lambda g: float(len(g)) / len(values)).to_dict()
-            easy.append(ratios.get(1, 0))
-            medium.append(ratios.get(2, 0))
-            hard.append(ratios.get(3, 0))
-            group_names.append(group_name_mapping[group_name] if group_name_mapping else group_name)
-        _plot(ax, group_names, ['Easy', 'Medium', 'Hard'], i == 4, easy, medium, hard)
-        ax.set_title(title)
-        ax.set_xlabel(group_column if not group_name_mapping else group_name_mapping.get(group_column, group_column))
-        ax.set_ylabel('Feedback Ratio')
-        i += 1
+    ax = figure.add_subplot(111)
+    group_names = []
+    easy = []
+    medium = []
+    hard = []
+    for group_name, group_data in answers.groupby(group_column):
+        users = group_data['user'].unique()
+        values = feedback[feedback['user'].isin(users)]
+        ratios = values.groupby('value').apply(lambda g: float(len(g)) / len(values)).to_dict()
+        easy.append(ratios.get(1, 0))
+        medium.append(ratios.get(2, 0))
+        hard.append(ratios.get(3, 0))
+        group_names.append(group_name_mapping[group_name] if group_name_mapping else group_name)
+    _plot(ax, group_names, ['Easy', 'Medium', 'Hard'], True, easy, medium, hard)
+    ax.set_xlabel(group_column if not group_name_mapping else group_name_mapping.get(group_column, group_column))
+    ax.set_ylabel('Feedback Ratio')
+    ax.set_ylim(0.0, 1.0)
+    ax.set_title('Explicit Feedback')
+    figure.tight_layout()
 
 
 def plot_maps_success_vs_number_of_answers(figure, answers, verbose=False):
@@ -188,13 +159,11 @@ def plot_user_ratio(figure, answers, group_column, group_name_mapping=None, answ
     labels = None
     for group_name, group_data in answers.groupby(group_column):
         to_plot = []
-        anns = []
         current_labels = []
         if answer_numbers_min is not None:
             for num in answer_numbers_min:
                 filtered_users, all_users = user.user_ratio(group_data, answer_number_min=num)
                 to_plot.append(filtered_users / float(all_users))
-                anns.append('{}/{}'.format(filtered_users, all_users))
                 current_labels.append(str(num) + ' answers')
         else:
             for num in session_numbers:
@@ -265,30 +234,19 @@ def boxplot_success_per_user(figure, answers, group_column, group_name_mapping=N
 
 
 def boxplot_answers_per_user(figure, answers, prior_skill, group_column, group_name_mapping=None, verbose=False):
-    [answers_low, answers_medium, answers_high] = _split_data_by_skill(
-        answers, prior_skill, [25, 75])
-    to_plot_input = {
-        'All Users': answers,
-        'Users with Low Skill': answers_low,
-        'Users with Medium Skill': answers_medium,
-        'Users with High Skill': answers_high
-    }
-    i = 1
-    for title, data in to_plot_input.items():
-        ax = figure.add_subplot(2, 2, i)
-        labels = []
-        to_plot = []
-        for group_name, group_data in data.groupby(group_column):
-            number = user.answers_per_user(group_data)
-            to_plot.append(number.values())
-            labels.append(
-                str(group_name_mapping[group_name] if group_name_mapping else group_name) + '\n(' + str(len(number)) + ')')
-        ax.set_yscale('log')
-        ax.set_xlabel(group_name_mapping.get(group_column, group_column) if group_name_mapping else group_column)
-        ax.set_ylabel('number of answers')
-        ax.set_title(title)
-        _boxplot(ax, to_plot, labels, name='Answers per User - %s' % title, verbose=verbose)
-        i += 1
+    ax = figure.add_subplot(111)
+    labels = []
+    to_plot = []
+    for group_name, group_data in answers.groupby(group_column):
+        number = user.answers_per_user(group_data)
+        to_plot.append(number.values())
+        labels.append(
+            str(group_name_mapping[group_name] if group_name_mapping else group_name) + '\n(' + str(len(number)) + ')')
+    ax.set_yscale('log')
+    ax.set_xlabel(group_name_mapping.get(group_column, group_column) if group_name_mapping else group_column)
+    ax.set_ylabel('Number of Answers')
+    ax.set_title('Implicit Feedback')
+    _boxplot(ax, to_plot, labels, name='Answers per User', verbose=verbose)
     figure.tight_layout()
 
 
@@ -566,14 +524,17 @@ def plot_success_per_week(figure, answers, verbose=False):
 
 
 def _plot(ax, labels, data_labels, show_legend, *args):
+    markers = 'osvDdp'
     if data_labels is None:
         data_labels = [None for i in args]
     zipped = zip(*sorted(zip(labels, *args)))
     xs = range(len(labels))
     ax.set_xticks(xs)
     for i in range(1, len(zipped)):
-        ax.plot(xs, zipped[i], '-o', label=data_labels[i - 1])
+        ax.plot(xs, zipped[i], '-%s' % markers[i - 1], label=data_labels[i - 1])
     ax.set_xticklabels(zipped[0])
+    ax.yaxis.grid(True, linestyle='-', which='major', color='lightgrey', alpha=0.5)
+    ax.set_axisbelow(True)
     for label in ax.get_xticklabels():
         label.set_rotation(10)
     if show_legend:
