@@ -10,9 +10,9 @@ import math
 import matplotlib.pyplot as plt
 
 FEEDBACK_MAPPING = {
-    1: 'Easy',
-    2: 'Medium',
-    3: 'Hard'
+    1: 'Too Easy',
+    2: 'Appropriate',
+    3: 'Too Difficult'
 }
 
 
@@ -51,7 +51,7 @@ def boxplot_feedback_vs_number_of_answers(figure, feedback, answers, verbose=Fal
     figure.tight_layout()
 
 
-def plot_feedback_by_success(figure, feedback, answers, prior_skill, verbose=False):
+def plot_feedback_by_success(figure, feedback, answers, verbose=False):
     feedback = decorator.success_before(feedback, answers)
     ax = figure.add_subplot(111)
     labels = []
@@ -67,7 +67,7 @@ def plot_feedback_by_success(figure, feedback, answers, prior_skill, verbose=Fal
         easy.append(ratios.get(1, 0))
         medium.append(ratios.get(2, 0))
         hard.append(ratios.get(3, 0))
-    _plot(ax, labels, ['Easy', 'Medium', 'Hard'], True, easy, medium, hard)
+    _plot(ax, labels, [FEEDBACK_MAPPING[1], FEEDBACK_MAPPING[2], FEEDBACK_MAPPING[3]], True, easy, medium, hard)
     ax.set_xlabel("User's Success before Rating (%)")
     ax.set_ylabel("Feedback Ratio")
     ax.set_ylim(0.0, 1.0)
@@ -75,7 +75,7 @@ def plot_feedback_by_success(figure, feedback, answers, prior_skill, verbose=Fal
     figure.tight_layout()
 
 
-def plot_feedback_by_group(figure, answers, feedback, prior_skill, group_column, group_name_mapping=None, verbose=False):
+def plot_feedback_by_group(figure, answers, feedback, group_column, group_name_mapping=None, verbose=False):
     ax = figure.add_subplot(111)
     group_names = []
     easy = []
@@ -89,7 +89,7 @@ def plot_feedback_by_group(figure, answers, feedback, prior_skill, group_column,
         medium.append(ratios.get(2, 0))
         hard.append(ratios.get(3, 0))
         group_names.append(group_name_mapping[group_name] if group_name_mapping else group_name)
-    _plot(ax, group_names, ['Easy', 'Medium', 'Hard'], True, easy, medium, hard)
+    _plot(ax, group_names, [FEEDBACK_MAPPING[1], FEEDBACK_MAPPING[2], FEEDBACK_MAPPING[3]], True, easy, medium, hard)
     ax.set_xlabel(group_column if not group_name_mapping else group_name_mapping.get(group_column, group_column))
     ax.set_ylabel('Feedback Ratio')
     ax.set_ylim(0.0, 1.0)
@@ -233,7 +233,7 @@ def boxplot_success_per_user(figure, answers, group_column, group_name_mapping=N
     _boxplot(ax, to_plot, labels, name='Success per User', verbose=verbose)
 
 
-def boxplot_answers_per_user(figure, answers, prior_skill, group_column, group_name_mapping=None, verbose=False):
+def boxplot_answers_per_user(figure, answers, group_column, group_name_mapping=None, verbose=False):
     ax = figure.add_subplot(111)
     labels = []
     to_plot = []

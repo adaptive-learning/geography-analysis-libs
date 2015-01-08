@@ -44,7 +44,7 @@ def map_graphs(args, data, feedback, prior_skill, mapping, prefix, filename_pref
     filename_prefix += str(group_column) + "_"
     if analysis.is_group(args, 'motivation'):
         fig = plt.figure()
-        graph.boxplot_answers_per_user(fig, data, prior_skill, group_column, mapping, verbose=args.verbose)
+        graph.boxplot_answers_per_user(fig, data, group_column, mapping, verbose=args.verbose)
         analysis.savefig(args, fig, filename_prefix + 'answers_per_user_boxplot', prefix=prefix)
 
         fig = plt.figure()
@@ -65,7 +65,7 @@ def map_graphs(args, data, feedback, prior_skill, mapping, prefix, filename_pref
         fig = plt.figure()
         data = decorator.session_number(data)
         graph.boxplot_answers_per_user(fig,
-            data[data['session_number'] == 0], prior_skill, group_column, mapping, verbose=args.verbose)
+            data[data['session_number'] == 0], group_column, mapping, verbose=args.verbose)
         fig.suptitle('AB testing: number of answers per user (only the first session)')
         analysis.savefig(args, fig, filename_prefix + 'answers_per_user_session_0_boxplot', prefix=prefix)
 
@@ -82,7 +82,7 @@ def map_graphs(args, data, feedback, prior_skill, mapping, prefix, filename_pref
 
         if feedback is not None:
             fig = plt.figure()
-            graph.plot_feedback_by_group(fig, data, feedback, prior_skill, group_column, mapping, verbose=args.verbose)
+            graph.plot_feedback_by_group(fig, data, feedback, group_column, mapping, verbose=args.verbose)
             analysis.savefig(args, fig, filename_prefix + 'feedback_per_group', prefix=prefix)
         print "Group [motivation] processed"
     else:
@@ -135,7 +135,7 @@ def main():
     if args.buckets:
         data, mapping = abtesting.bucketing(data, 'ab_group', mapping, args.buckets)
     feedback = analysis.load_feedback(args, data)
-    if analysis.is_any_group(args, ['motivation']):
+    if analysis.is_any_group(args, ['difference']):
         difficulty, prior_skill = analysis.load_difficulty_and_prior_skill(args, None)
         if difficulty is None:
             _, data_all = analysis.load_answers(args, all_needed=True)
