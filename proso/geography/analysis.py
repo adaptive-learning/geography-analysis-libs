@@ -57,9 +57,14 @@ def parser_init(required=None):
         help='extension for the output fles')
     parser.add_argument(
         '--drop-classrooms',
-        action='store_true',
+        type=int,
         dest='drop_classrooms',
         help='drop users having some of the first answer from classroom')
+    parser.add_argument(
+        '--only-classrooms',
+        type=int,
+        dest='only_classrooms',
+        help='only users having some of the first answer from classroom')
     parser.add_argument(
         '--drop-tests',
         action='store_true',
@@ -177,9 +182,10 @@ def read_cache(args, filename, csv_parser=None):
 
 
 def data_hash(args):
-    return ('apu_%s__dcs_%s__dts_%s__mc_%s__pat_%s__mt_%s__du_%s__mind_%s__maxd_%s__do_%s__fab_%s' % (
+    return ('apu_%s__dcs_%s__ocs_%s__dts_%s__mc_%s__pat_%s__mt_%s__du_%s__mind_%s__maxd_%s__do_%s__fab_%s' % (
         args.answers_per_user,
         args.drop_classrooms,
+        args.only_classrooms,
         args.drop_tests,
         'x'.join(args.map_code if args.map_code else []),
         'x'.join(args.place_asked_type if args.place_asked_type else []),
@@ -268,8 +274,12 @@ def load_answers(args, all_needed=True):
         data = answer.apply_filter(data, lambda d: all(map(lambda g: g in d['ab_values'], args.filter_abvalue)))
     if args.drop_tests:
         data = answer.apply_filter(data, lambda x: np.isnan(x['test_id']))
+    if args.drop_classrooms and args.only_classrooms:
+        raise Exception("Can't have data both with and without classrooms")
     if args.drop_classrooms:
-        data = answer.drop_classrooms(data)
+        data, _ = answer.drop_classrooms(data, classroom_size=args.drop_classrooms)
+    if args.only_classrooms:
+        _, data = answer.drop_classrooms(data, classroom_size=args.only_classrooms)
     if args.answers_per_user:
         data = answer.drop_users_by_answers(data, answer_limit_min=args.answers_per_user)
     if args.drop_outliers:

@@ -72,7 +72,7 @@ def main():
         graph.plot_first_session_vs_total(fig, data)
         analysis.savefig(args, fig, 'first_session_vs_total')
         fig = plt.figure()
-        graph.plot_feedback_by_success(fig, feedback, data, prior_skill, verbose=args.verbose)
+        graph.plot_feedback_by_success(fig, feedback, data, verbose=args.verbose)
         analysis.savefig(args, fig, 'feedback_by_success')
         fig = plt.figure()
         graph.boxplot_feedback_vs_number_of_answers(fig, feedback, data, verbose=args.verbose)

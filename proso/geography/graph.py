@@ -544,7 +544,7 @@ def _plot(ax, labels, data_labels, show_legend, *args):
 def _boxplot(ax, to_plot, labels, name=None, verbose=False):
     if len(to_plot) == 2:
         tstat, pvalue = scipy.stats.ttest_ind(numpy.log(to_plot[0]), numpy.log(to_plot[1]))
-        pvalue = str(int(100 * pvalue if not math.isnan(pvalue) else 0) / 100.0)
+        pvalue = str(numpy.round(pvalue, 2))
     means = []
     medians = []
     stds = []
